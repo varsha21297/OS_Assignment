@@ -14,10 +14,16 @@ void loader_cleanup() {
 /*
  * Load and run the ELF executable file
  */
-void load_and_run_elf(char** exe) {
+void load_and_run_elf(char** exe) { 
+  
   fd = open(argv[1], O_RDONLY);
-  char* siz= (char*)malloc(100* sizeof(char));
-  ssize_t bytes_read= read(fd, siz, 100);
+  off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
+  lseek(fd, 0, SEEK_SET); // pointer at the beginning
+  uint8_t *store_elf = (*uint8_t)malloc(fileSize); // allocate memory
+  ssize_t bytes_read = read(fd, store_elf, file_size);
+
+
+
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
