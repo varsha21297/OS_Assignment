@@ -16,7 +16,7 @@ void loader_cleanup() {
  */
 void load_and_run_elf(char** exe) { 
   
-  int fd = open(exe[1], O_RDONLY);
+  fd = open(exe[1], O_RDONLY);
   off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
