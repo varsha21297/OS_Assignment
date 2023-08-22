@@ -16,12 +16,13 @@ void loader_cleanup() {
  */
 void load_and_run_elf(char** exe) { 
   
-  fd = open(argv[1], O_RDONLY);
+  int fd = open(exe[1], O_RDONLY);
   off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
-  uint8_t *store_elf = (*uint8_t)malloc(fileSize); // allocate memory
-  ssize_t bytes_read = read(fd, store_elf, file_size);
-
+  uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
+  ssize_t bytes_read = read(fd, store_elf, fileSize);
+  int s= phdr->p_type;
+  printf("%d", s);
 
 
   // 1. Load entire binary content into the memory from the ELF file.
@@ -44,7 +45,7 @@ int main(int argc, char** argv)
   }
   // 1. carry out necessary checks on the input ELF file
   // 2. passing it to the loader for carrying out the loading/execution
-  load_and_run_elf(argv[1]);
+  load_and_run_elf(argv);
   // 3. invoke the cleanup routine inside the loader  
   loader_cleanup();
   return 0;
