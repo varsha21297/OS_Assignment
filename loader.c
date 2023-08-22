@@ -18,6 +18,7 @@ void load_and_run_elf(char** exe) {
   fd = open(argv[1], O_RDONLY);
   char* siz= (char*)malloc(100* sizeof(char));
   ssize_t bytes_read= read(fd, siz, 100);
+  virtual_mem= mmap(NULL, ph.p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE,O,O);
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
