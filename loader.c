@@ -33,8 +33,8 @@ void load_and_run_elf(char** exe) {
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
-  int result = _start();
-  printf("User _start return value = %d\n",result);
+  //int result = _start();
+  //printf("User _start return value = %d\n",result);
 }
 
 int main(int argc, char** argv) 
