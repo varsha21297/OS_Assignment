@@ -21,8 +21,8 @@ void load_and_run_elf(char** exe) {
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
   ssize_t bytes_read = read(fd, store_elf, fileSize);
-  int s= phdr->p_type;
-  printf("%d", s);
+  //int s= phdr->p_type;
+  printf("%p", phdr);
 
 
   // 1. Load entire binary content into the memory from the ELF file.
