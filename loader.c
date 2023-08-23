@@ -24,8 +24,19 @@ void load_and_run_elf(char* exe[]) {
   ehdr= (Elf32_Ehdr*) store_elf;
   uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
   phdr= (Elf32_Phdr*) store_pdr;
+  int address;
+  int offset;
+  for (int i=0; i< ehdr->e_phnum; i++){
+    if (phdr[i]->p_type=='PT_LOAD'){
+      address= phdr[i]->p_vaddr;
+      offset= phdr[i]->p_offset;
+      break
+    }
+  }
 
   virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  int actual= ehdr->e_entry-(address+offset);
+  memcpy()
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
