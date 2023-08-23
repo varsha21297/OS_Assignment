@@ -1,4 +1,4 @@
-#include "loader.h"
+#include "loader.h" 
 
 Elf32_Ehdr *ehdr; //struct format
 Elf32_Phdr *phdr;
@@ -17,6 +17,7 @@ void loader_cleanup() {
 void load_and_run_elf(char** exe) { 
   
   fd = open(exe, O_RDONLY);
+  
 
   // 1. Load entire binary content into the memory from the ELF file.
 
@@ -40,28 +41,36 @@ void load_and_run_elf(char** exe) {
 
 
   for (int i=p_off ; i<p_num ;) {
+    unsigned int type = phdr -> p_type;
+    if (type=='PT_LOAD') {
+      if ((entry_point >= phdr->vaddr) && (entry_point <= phdr->vaddr + phdr->p_memsz)) {
+
+          //found segment 
+      }
+    }
 
     i = i + p_size;
     printf(i);
-  }
-
-  printf("entry point %x", (ehdr -> e_entry));
+    }
 
 
-
-
-
-  
-  
   // 3. Allocate memory of the size "p_memsz" using mmap function 
   //    and then copy the segment content
+
+
+    void *virtual_mem = mmap(NULL,phdr -> p_memz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  }
+
+  //exact entry point = entry point(elf header) - entry point(program header) + offset
+  //for copying (memcpy)
+
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
 
   int result = _start();
   printf("User _start return value = %d\n",result);
-}
+
 
 int main(int argc, char** argv) 
 {
@@ -71,7 +80,7 @@ int main(int argc, char** argv)
   }
   // 1. carry out necessary checks on the input ELF file
   // 2. passing it to the loader for carrying out the loading/execution
-  load_and_run_elf(argv[1]);
+  load_and_run_elf(argv);
   // 3. invoke the cleanup routine inside the loader  
   loader_cleanup();
   return 0;
