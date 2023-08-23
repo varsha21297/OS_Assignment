@@ -58,7 +58,7 @@ void load_and_run_elf(char** exe) {
   for (int i=p_off ; i<p_num ) {
       unsigned int type = phdr -> p_type;
       if (type=='PT_LOAD') {
-        if ((entry_point >= phdr->vaddr) && (entry_point <= phdr->vaddr + phdr->p_memsz)) {
+        if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
           break;
