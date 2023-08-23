@@ -24,6 +24,8 @@ void load_and_run_elf(char* exe[]) {
   ehdr= (Elf32_Ehdr*) store_elf;
   uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
   phdr= (Elf32_Phdr*) store_pdr;
+
+  virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
@@ -32,8 +34,8 @@ void load_and_run_elf(char* exe[]) {
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
-  int result = _start();
-  printf("User _start return value = %d\n",result);
+  //int result = _start();
+  //printf("User _start return value = %d\n",result);
 }
 
 int main(int argc, char* argv[]) 
