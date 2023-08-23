@@ -34,19 +34,19 @@ void load_and_run_elf(char** exe) {
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
 
+  unsigned int p_off = (ehdr -> e_phoff);
+  unsigned short p_num = (ehdr -> e_phnum);
+  unsigned short p_size = (ehdr -> e_phentsize);
+  unsigned int entry_point = (ehdr -> e_entry);
   
-
-  unit8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
+  uint8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
   phdr = (Elf32_Phdr*)store_ph;  //typecasting
 
 
   unsigned int address;
   int offset;
 
-  unsigned int p_off = (ehdr -> e_phoff);
-  unsigned short p_num = (ehdr -> e_phnum);
-  unsigned short p_size = (ehdr -> e_phentsize);
-  unsigned int entry_point = (ehdr -> e_entry); 
+   
 
   /*for (int i=0; i< ehdr->e_phnum; i++){
     if (phdr[i].p_type =="PT_LOAD"){
@@ -55,7 +55,7 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num ) {
+  for (int i=p_off ; i<p_num ; ) {
       unsigned int type = phdr -> p_type;
       if (type=='PT_LOAD') {
         if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
