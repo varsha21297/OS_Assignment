@@ -25,6 +25,21 @@ void load_and_run_elf(char** exe) {
   uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
   phdr= (Elf32_Phdr*) store_pdr;
 
+  // 1. Load entire binary content into the memory from the ELF file.
+
+  
+
+  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
+
+  // 2. Iterate through the PHDR table and find the section of PT_LOAD 
+  //    type that contains the address of the entrypoint method in fib.c
+
+  
+
+  unit8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
+  phdr = (Elf32_Phdr*)store_ph;  //typecasting
+
+
   unsigned int address;
   int offset;
 
@@ -55,23 +70,11 @@ void load_and_run_elf(char** exe) {
       //printf(i);
       }
 
-  virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
   memcpy(virtual_mem, actual, sizeof(actual));
   int actual1= (unsigned int)actual;
-  // 1. Load entire binary content into the memory from the ELF file.
-
   
-
-  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
-
-  // 2. Iterate through the PHDR table and find the section of PT_LOAD 
-  //    type that contains the address of the entrypoint method in fib.c
-
-  
-
-  unit8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
-  phdr = (Elf32_Phdr*)store_ph;  //typecasting
 
 
   
