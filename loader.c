@@ -35,7 +35,7 @@ void load_and_run_elf(char* exe[]) {
     int found = 0;
 
     for (int i = 0; i < ehdr->e_phnum; i++) {
-        Elf64_Phdr *programHeader = phdr[i];
+        Elf32_Phdr *programHeader = phdr[i];
 
         if (programHeader->p_type == 1 /* PT_LOAD */) {
             if (ehdr->e_entry >= programHeader->p_vaddr &&
