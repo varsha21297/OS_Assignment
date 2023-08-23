@@ -21,8 +21,9 @@ void load_and_run_elf(char* exe[]) {
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
   ssize_t bytes_read = read(fd, store_elf, fileSize);
-  
-
+  ehdr= (Elf32_Ehdr*) store_elf;
+  uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
+  phdr= (Elf32_Phdr*) store_pdr;
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
