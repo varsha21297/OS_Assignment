@@ -91,11 +91,6 @@ void load_and_run_elf(char** exe) {
   int result = _start();
   printf("User _start return value = %d\n",result);
 
-
-  int result  = _start();
-  printf("User _start return value = %d\n",result);
-
-
  int main(int argc, char** argv) 
 {
   if(argc != 2) {
