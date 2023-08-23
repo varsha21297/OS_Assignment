@@ -21,52 +21,7 @@ void load_and_run_elf(char* exe[]) {
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
   ssize_t bytes_read = read(fd, store_elf, fileSize);
-  void *mapped_memory = mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (mapped_memory == MAP_FAILED) {
-        perror("mmap");
-        close(fd);
-    }
-
-    // Access the ELF header
-    ehdr = (Elf32_Ehdr *)mapped_memory;
-
-    // Iterate through program headers
-    phdr = (Elf32_Phdr *)(mapped_memory + ehdr->e_phoff);
-    int found = 0;
-
-    for (int i = 0; i < ehdr->e_phnum; i++) {
-
-        if (phdr->p_type == 1 /* PT_LOAD */) {
-            if (ehdr->e_entry >= phdr->p_vaddr &&
-                ehdr->e_entry < phdr->p_vaddr + phdr->p_memsz) {
-                found = 1;
-                break;
-            }
-        }
-    }
-    void *segmentMemory = mmap(
-        NULL,
-        phdr->p_memsz,
-        PROT_READ,
-        MAP_PRIVATE | MAP_ANONYMOUS,
-        0, 0
-    );
-    if (pread(fd, segmentMemory, phdr->p_memsz, phdr->p_offset) == -1) {
-        perror("Error reading segment content");
-        close(fd);
-        munmap(segmentMemory, phdr->p_memsz);
-    }
-    // Calculate the offset within the segment to the entry point
-    uintptr_t entryOffset = ehdr->e_entry - phdr->p_vaddr;
-
-    // Navigate to the entry point within the loaded segment
-    void (*entryPoint)() = (void (*)())((uintptr_t)segmentMemory + entryOffset);
-    // Typecast the address to a function pointer
-    void (*typeentry)() = (_start *)(uintptr_t)(segmentMemory + entryOffset);
-    // Call the entry point function
-    typeentry();
-
-
+  
 
   // 1. Load entire binary content into the memory from the ELF file.
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
