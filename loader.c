@@ -21,18 +21,9 @@ void load_and_run_elf(char** exe) {
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
   ssize_t bytes_read = read(fd, store_elf, fileSize);
-  ehdr= (Elf32_Ehdr*) store_elf;
-  uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
-  phdr= (Elf32_Phdr*) store_pdr;
-
-  // 1. Load entire binary content into the memory from the ELF file.
-
-  
-
   ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
 
-  // 2. Iterate through the PHDR table and find the section of PT_LOAD 
-  //    type that contains the address of the entrypoint method in fib.c
+  
 
   unsigned int p_off = (ehdr -> e_phoff);
   unsigned short p_num = (ehdr -> e_phnum);
@@ -57,10 +48,11 @@ void load_and_run_elf(char** exe) {
   }*/
   for (int i=p_off ; i<p_num; ) {
       unsigned int type = phdr -> p_type;
-      if (type=='PT_LOAD') {
+      if (type==PT_LOAD) { 
         if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
+          printf("%x\n",address);
           break;
             //found segment 
         }
@@ -72,25 +64,22 @@ void load_and_run_elf(char** exe) {
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
-  memcpy(virtual_mem, actual, sizeof(actual));
-  int actual1= (unsigned int)actual;
+  unsigned int*ptr = &actual;
+  memcpy(virtual_mem, ptr, sizeof(actual));
+  int actual1= (int)actual;
   
 
 
-  
-
+  // 2. Iterate through the PHDR table and find the section of PT_LOAD 
+  //    type that contains the address of the entrypoint method in fib.c
   // 3. Allocate memory of the size "p_memsz" using mmap function 
   //    and then copy the segment content
-
-
-  //exact entry point = entry point(elf header) - entry point(program header) + offset
-  //for copying (memcpy)
-
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
-  int result = _start();
-  printf("User _start return value = %d\n",result);
+  
+  //int result = _start();
+  //printf("User _start return value = %d\n",result);
 }
 
  int main(int argc, char** argv) 
