@@ -16,9 +16,29 @@ void loader_cleanup() {
  */
 void load_and_run_elf(char** exe) { 
   
-  fd = open(exe, O_RDONLY);
-  
+  fd = open(exe[1], O_RDONLY);
+  off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
+  lseek(fd, 0, SEEK_SET); // pointer at the beginning
+  uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
+  ssize_t bytes_read = read(fd, store_elf, fileSize);
+  ehdr= (Elf32_Ehdr*) store_elf;
+  uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
+  phdr= (Elf32_Phdr*) store_pdr;
 
+  int address;
+  int offset;
+
+  for (int i=0; i< ehdr->e_phnum; i++){
+    if (phdr[i]->p_type=='PT_LOAD'){
+      address= phdr[i]->p_vaddr;
+      offset= phdr[i]->p_offset;
+      break
+    }
+  }
+
+  virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  int actual= ehdr->e_entry-(address+offset);
+  memcpy()
   // 1. Load entire binary content into the memory from the ELF file.
 
   off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
@@ -68,11 +88,11 @@ void load_and_run_elf(char** exe) {
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
 
-  int result = _start();
+  int result  = _start();
   printf("User _start return value = %d\n",result);
 
 
-int main(int argc, char** argv) 
+ int main(int argc, char** argv) 
 {
   if(argc != 2) {
     printf("Usage: %s <ELF Executable> \n",argv[0]);
