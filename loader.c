@@ -22,31 +22,26 @@ void load_and_run_elf(char** exe) {
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
   ssize_t bytes_read = read(fd, store_elf, fileSize);
   ehdr= (Elf32_Ehdr*) store_elf;
-  uint8_t *store_pdr = (uint8_t*)malloc(fileSize);
-  phdr= (Elf32_Phdr*) store_pdr;
-
+  unsigned int p_off = (ehdr -> e_phoff);
+  unsigned short p_num = (ehdr -> e_phnum);
+  unsigned short p_size = (ehdr -> e_phentsize);
+  unsigned int entry_point = (ehdr -> e_entry); 
+  uint8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
+  phdr = (Elf32_Phdr*)store_ph;
   // 1. Load entire binary content into the memory from the ELF file.
-
-  
-
-  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
 
   // 2. Iterate through the PHDR table and find the section of PT_LOAD 
   //    type that contains the address of the entrypoint method in fib.c
 
   
 
-  unit8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
-  phdr = (Elf32_Phdr*)store_ph;  //typecasting
+    //typecasting
 
 
   unsigned int address;
   int offset;
 
-  unsigned int p_off = (ehdr -> e_phoff);
-  unsigned short p_num = (ehdr -> e_phnum);
-  unsigned short p_size = (ehdr -> e_phentsize);
-  unsigned int entry_point = (ehdr -> e_entry); 
+  
 
   /*for (int i=0; i< ehdr->e_phnum; i++){
     if (phdr[i].p_type =="PT_LOAD"){
@@ -57,7 +52,7 @@ void load_and_run_elf(char** exe) {
   }*/
   for (int i=p_off ; i<p_num; ) {
       unsigned int type = phdr -> p_type;
-      if (type=='PT_LOAD') {
+      if (type=="PT_LOAD") {
         if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
