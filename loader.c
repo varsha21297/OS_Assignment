@@ -55,7 +55,7 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num ; ) {
+  for (int i=p_off ; i<p_num; ) {
       unsigned int type = phdr -> p_type;
       if (type=='PT_LOAD') {
         if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
