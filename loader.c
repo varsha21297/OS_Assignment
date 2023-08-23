@@ -29,16 +29,17 @@ void load_and_run_elf(char** exe) {
   int offset;
 
   for (int i=0; i< ehdr->e_phnum; i++){
-    if (phdr[i]->p_type=='PT_LOAD'){
-      address= phdr[i]->p_vaddr;
-      offset= phdr[i]->p_offset;
-      break
+    if (phdr[i].p_type =="PT_LOAD"){
+      address= phdr[i].p_vaddr;
+      offset= phdr[i].p_offset;
+      break;
     }
   }
 
   virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   int actual= ehdr->e_entry-(address+offset);
-  memcpy()
+  memcpy(virtual_mem, actual, sizeof(actual));
+  int actual1= (*int)actual;
   // 1. Load entire binary content into the memory from the ELF file.
 
   off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
@@ -87,6 +88,9 @@ void load_and_run_elf(char** exe) {
   // 4. Navigate to the entrypoint address into the segment loaded in the memory in above step
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
+  int result = _start();
+  printf("User _start return value = %d\n",result);
+
 
   int result  = _start();
   printf("User _start return value = %d\n",result);
