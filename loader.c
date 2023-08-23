@@ -31,7 +31,7 @@ void load_and_run_elf(char** exe) {
   unsigned int entry_point = (ehdr -> e_entry);
   
 
-    //typecasting
+    
   uint8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
   phdr = (Elf32_Phdr*)store_ph;  //typecasting
 
