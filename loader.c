@@ -70,7 +70,7 @@ void load_and_run_elf(char** exe) {
         if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[1].p_vaddr + phdr[1].p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
-          printf("%x\n",address);
+          //printf("%x\n",address);
           break;
             //found segment 
         }
@@ -78,13 +78,14 @@ void load_and_run_elf(char** exe) {
 
       i = i + p_size; 
       //printf(i);
-      }
+      } 
+     }
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
-  unsigned int*ptr = &actual;
+  unsigned int *ptr = *(&actual);
   memcpy(virtual_mem, ptr, sizeof(actual));
-  int actual1= (int)actual;
+  /*int actual1= (int)actual;*/
   
 
 
@@ -98,9 +99,9 @@ void load_and_run_elf(char** exe) {
   
   int result = _start();
   printf("User _start return value = %d\n",result); 
-}
 
- int main(int argc, char** argv) {
+
+int main(int argc, char** argv) {
   if(argc != 2) {
     printf("Usage: %s <ELF Executable> \n",argv[0]);
     exit(1);
