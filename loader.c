@@ -83,13 +83,13 @@ void load_and_run_elf(char** exe) {
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, -1 , 0);
 
-  unsigned int actual= ehdr->e_entry-(address+offset);
+  void* actual= ehdr->e_entry-(address+offset);
   unsigned int *ptr = &actual;
   memcpy(virtual_mem, ptr, sizeof(actual));
-  /*int actual1= (int)actual;*/
+
 
   typedef int (*StartFunc)();
-    StartFunc _start = (StartFunc)entry_point;
+    StartFunc _start = (StartFunc)actual;
   
 
 
