@@ -46,27 +46,25 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num; ) { //convert to while loop 
+  for (int i=p_off ; i<p_num;i = i + p_size ) { //convert to while loop 
       unsigned int type = phdr[i].p_type;
       if (type==PT_LOAD) { 
         if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[i].p_vaddr + phdr[i].p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
-          printf("%x\n",address);
+          //printf("%x\n",address);
           break;
             //found segment 
         }
       }
-
-      i = i + p_size;
       //printf(i);
       }
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
-  unsigned int*ptr = &actual;
+  unsigned int *ptr = *(&actual);
   memcpy(virtual_mem, ptr, sizeof(actual));
-  int actual1= (int)actual;
+  /*int actual1= (int)actual;*/
   
 
 
