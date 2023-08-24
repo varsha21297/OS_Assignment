@@ -1,5 +1,5 @@
 #include "loader.h"
-
+#include <stdint.h>
 Elf32_Ehdr *ehdr; //struct format
 Elf32_Phdr *phdr;
 int fd;
