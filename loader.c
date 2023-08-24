@@ -1,4 +1,6 @@
 #include "loader.h"
+#include <stdint.h>
+
 Elf32_Ehdr *ehdr; //struct format
 Elf32_Phdr *phdr;
 int fd;
@@ -6,9 +8,9 @@ int fd;
 /*
  * release memory and other cleanups
  */
-void loader_cleanup() {
-  //free(ehdr);
-  //free(phdr);  
+void loader_cleanup(Elf32_Ehdr *ehdr,Elf32_Phdr *phdr) {
+  free(ehdr);
+  free(phdr);  
 }
 
 /*
@@ -16,14 +18,30 @@ void loader_cleanup() {
  */
 void load_and_run_elf(char** exe) { 
   
-  fd = open(exe[1], O_RDONLY);
+  fd = open(exe[0], O_RDONLY);
+  if (fd == -1) {
+        perror("Error opening ELF file");
+        exit(1);
+    }
+  
+  
   off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
   lseek(fd, 0, SEEK_SET); // pointer at the beginning
   uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
-  ssize_t bytes_read = read(fd, store_elf, fileSize);
-  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
-
+  if (store_elf == NULL) {
+        perror("Error allocating memory");
+        close(fd);
+        exit(1); 
+  }
   
+  ssize_t bytes_read = read(fd, store_elf, fileSize);
+  if (bytes_read == -1) {
+        perror("Error reading the file");
+        close(fd); // Close the file descriptor on error
+        exit(1);
+    }
+
+  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
 
   unsigned int p_off = (ehdr -> e_phoff);
   unsigned short p_num = (ehdr -> e_phnum);
@@ -46,10 +64,10 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num;i = i + p_size ) { //convert to while loop 
+  for (int i=p_off ; i<p_num; ) { //convert to while loop 
       unsigned int type = phdr[i].p_type;
       if (type==PT_LOAD) { 
-        if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[i].p_vaddr + phdr[i].p_memsz)) {
+        if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[1].p_vaddr + phdr[1].p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
           //printf("%x\n",address);
@@ -57,8 +75,11 @@ void load_and_run_elf(char** exe) {
             //found segment 
         }
       }
+
+      i = i + p_size; 
       //printf(i);
-      }
+      } 
+     }
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
@@ -76,9 +97,9 @@ void load_and_run_elf(char** exe) {
   // 5. Typecast the address to that of function pointer matching "_start" method in fib.c.
   // 6. Call the "_start" method and print the value returned from the "_start"
   
-  //int result = _start();
-  //printf("User _start return value = %d\n",result);
-}
+  int result = _start();
+  printf("User _start return value = %d\n",result); 
+
 
 int main(int argc, char** argv) {
   if(argc != 2) {
@@ -89,6 +110,6 @@ int main(int argc, char** argv) {
   // 2. passing it to the loader for carrying out the loading/execution
   load_and_run_elf(argv);
   // 3. invoke the cleanup routine inside the loader  
-  loader_cleanup();
+  loader_cleanup(ehdr , phdr);
   return 0;
 }
