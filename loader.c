@@ -83,7 +83,7 @@ void load_and_run_elf(char** exe) {
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
   unsigned int actual= ehdr->e_entry-(address+offset);
-  unsigned int *ptr = *(&actual);
+  unsigned int *ptr = &actual;
   memcpy(virtual_mem, ptr, sizeof(actual));
   /*int actual1= (int)actual;*/
   
