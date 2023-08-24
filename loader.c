@@ -1,4 +1,4 @@
-#include "loader.h" 
+#include "loader.h"
 
 Elf32_Ehdr *ehdr; //struct format
 Elf32_Phdr *phdr;
@@ -8,7 +8,8 @@ int fd;
  * release memory and other cleanups
  */
 void loader_cleanup() {
-  
+  //free(ehdr);
+  //free(phdr);  
 }
 
 /*
@@ -30,8 +31,6 @@ void load_and_run_elf(char** exe) {
   unsigned short p_size = (ehdr -> e_phentsize);
   unsigned int entry_point = (ehdr -> e_entry);
   
-
-    
   uint8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
   phdr = (Elf32_Phdr*)store_ph;  //typecasting
 
@@ -39,7 +38,6 @@ void load_and_run_elf(char** exe) {
   unsigned int address;
   int offset;
 
-  
    
 
   /*for (int i=0; i< ehdr->e_phnum; i++){
@@ -49,7 +47,7 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num; ) {
+  for (int i=p_off ; i<p_num; ) { //convert to while loop 
       unsigned int type = phdr -> p_type;
       if (type==PT_LOAD) { 
         if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
@@ -85,8 +83,7 @@ void load_and_run_elf(char** exe) {
   //printf("User _start return value = %d\n",result);
 }
 
- int main(int argc, char** argv) 
-{
+ int main(int argc, char** argv) {
   if(argc != 2) {
     printf("Usage: %s <ELF Executable> \n",argv[0]);
     exit(1);
