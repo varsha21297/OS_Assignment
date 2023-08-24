@@ -30,8 +30,8 @@ void load_and_run_elf(char** exe) {
 
     // Allocate memory to store the entire ELF file
     ehdr = (Elf32_Ehdr*)malloc(fileSize);
-    read(fd, store_elf, fileSize);
-    if (store_elf == NULL) {
+    read(fd, ehdr, fileSize);
+    if (ehdr == NULL) {
         perror("Error allocating memory");
         close(fd);
         exit(1);
@@ -47,8 +47,10 @@ void load_and_run_elf(char** exe) {
     // Calculate the size of each program header
     unsigned short p_size = ehdr->e_phentsize;
 
+    unsigned int entry_point = ehdr->e_entry;
+
     // Allocate memory to store program headers
-    phdr = (*Elf32_Phdr)malloc(p_size);
+    phdr = (Elf32_Phdr*)malloc(p_size);
     lseek(fd, ehdr->e_phoff, SEEK_SET); // pointer to program header
 
 
@@ -87,7 +89,7 @@ void load_and_run_elf(char** exe) {
   /*int actual1= (int)actual;*/
 
   typedef int (*StartFunc)();
-    StartFunc _start = (StartFunc)entrypoint;
+    StartFunc _start = (StartFunc)entry_point;
   
 
 
