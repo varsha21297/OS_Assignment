@@ -1,3 +1,5 @@
+#include "loader.h"
+
 Elf32_Ehdr *ehdr;  // Global variables to store ELF header and program header
 Elf32_Phdr *phdr;
 int fd;
