@@ -1,55 +1,53 @@
-#include "loader.h"
-#include <stdint.h>
-
-Elf32_Ehdr *ehdr; //struct format
+Elf32_Ehdr *ehdr;  // Global variables to store ELF header and program header
 Elf32_Phdr *phdr;
 int fd;
 
 /*
- * release memory and other cleanups
+ * Release memory and other cleanups
  */
-void loader_cleanup(Elf32_Ehdr *ehdr,Elf32_Phdr *phdr) {
-  free(ehdr);
-  free(phdr);  
+void loader_cleanup() {
+    free(ehdr);
+    free(phdr);
+    close(fd);
 }
 
 /*
  * Load and run the ELF executable file
  */
-void load_and_run_elf(char** exe) { 
-  
-  fd = open(exe[1], O_RDONLY);
-  if (fd == -1) {
+void load_and_run_elf(char** exe) {
+    // Open the ELF file
+    fd = open(exe[1], O_RDONLY);
+    if (fd == -1) {
         perror("Error opening ELF file");
         exit(1);
     }
-  
-  
-  off_t fileSize = lseek(fd, 0, SEEK_END);   //off_t basically used for file offsets
-  lseek(fd, 0, SEEK_SET); // pointer at the beginning
-  uint8_t *store_elf = (uint8_t*)malloc(fileSize); // allocate memory
-  if (store_elf == NULL) {
+
+    // Get the file size
+    off_t fileSize = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);  // Reset file offset to the beginning
+
+    // Allocate memory to store the entire ELF file
+    ehdr = (*Elf32_Ehdr)malloc(fileSize);
+    read(fd, store_elf, fileSize);
+    if (store_elf == NULL) {
         perror("Error allocating memory");
         close(fd);
-        exit(1); 
-  }
-  
-  ssize_t bytes_read = read(fd, store_elf, fileSize);
-  if (bytes_read == -1) {
-        perror("Error reading the file");
-        close(fd); // Close the file descriptor on error
         exit(1);
     }
 
-  ehdr = (Elf32_Ehdr*)store_elf;  //typecasting
 
-  unsigned int p_off = (ehdr -> e_phoff);
-  unsigned short p_num = (ehdr -> e_phnum);
-  unsigned short p_size = (ehdr -> e_phentsize);
-  unsigned int entry_point = (ehdr -> e_entry);
-  
-  uint8_t *store_ph = (uint8_t*)malloc(p_num*p_size);
-  phdr = (Elf32_Phdr*)store_ph;  //typecasting
+    // Calculate the offset of the program headers
+    unsigned int p_off = ehdr->e_phoff;
+
+    // Calculate the number of program headers
+    unsigned short p_num = ehdr->e_phnum;
+
+    // Calculate the size of each program header
+    unsigned short p_size = ehdr->e_phentsize;
+
+    // Allocate memory to store program headers
+    phdr = (*Elf32_Phdr)malloc(p_size);
+    lseek(fd, ehdr->e_phoff, SEEK_SET); // pointer to program header
 
 
   unsigned int address;
@@ -64,28 +62,30 @@ void load_and_run_elf(char** exe) {
       break;
     }
   }*/
-  for (int i=p_off ; i<p_num; ) { //convert to while loop 
-      unsigned int type = phdr[i].p_type;
+  for (int i=0 ; i<p_num; i++ ) { 
+    read(fd,phdr,p_num); //reading the program header table
+      unsigned int type = phdr->p_type;
       if (type==PT_LOAD) { 
-        if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[1].p_vaddr + phdr[1].p_memsz)) {
-          address= phdr[i].p_vaddr;
-          offset= phdr[i].p_offset;
+        if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
+          address= phdr->p_vaddr;
+          offset= phdr->p_offset;
           //printf("%x\n",address);
           break;
             //found segment 
         }
       }
-
-      i = i + p_size; 
-      //printf(i);
-      } 
+    } 
      
 
-  void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+  void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, -1 , 0);
+
   unsigned int actual= ehdr->e_entry-(address+offset);
   unsigned int *ptr = &actual;
   memcpy(virtual_mem, ptr, sizeof(actual));
   /*int actual1= (int)actual;*/
+
+  typedef int (*StartFunc)();
+    StartFunc _start = (StartFunc)entrypoint;
   
 
 
