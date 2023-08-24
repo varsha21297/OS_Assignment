@@ -29,7 +29,7 @@ void load_and_run_elf(char** exe) {
     lseek(fd, 0, SEEK_SET);  // Reset file offset to the beginning
 
     // Allocate memory to store the entire ELF file
-    ehdr = (*Elf32_Ehdr)malloc(fileSize);
+    ehdr = (Elf32_Ehdr*)malloc(fileSize);
     read(fd, store_elf, fileSize);
     if (store_elf == NULL) {
         perror("Error allocating memory");
