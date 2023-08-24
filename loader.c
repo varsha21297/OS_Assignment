@@ -18,7 +18,7 @@ void loader_cleanup(Elf32_Ehdr *ehdr,Elf32_Phdr *phdr) {
  */
 void load_and_run_elf(char** exe) { 
   
-  fd = open(exe[0], O_RDONLY);
+  fd = open(exe[1], O_RDONLY);
   if (fd == -1) {
         perror("Error opening ELF file");
         exit(1);
