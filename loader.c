@@ -48,9 +48,9 @@ void load_and_run_elf(char** exe) {
     }
   }*/
   for (int i=p_off ; i<p_num; ) { //convert to while loop 
-      unsigned int type = phdr -> p_type;
+      unsigned int type = phdr[i].p_type;
       if (type==PT_LOAD) { 
-        if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
+        if ((entry_point >= phdr[i].p_vaddr) && (entry_point <= phdr[i].p_vaddr + phdr[i].p_memsz)) {
           address= phdr[i].p_vaddr;
           offset= phdr[i].p_offset;
           printf("%x\n",address);
@@ -83,7 +83,7 @@ void load_and_run_elf(char** exe) {
   //printf("User _start return value = %d\n",result);
 }
 
- int main(int argc, char** argv) {
+int main(int argc, char** argv) {
   if(argc != 2) {
     printf("Usage: %s <ELF Executable> \n",argv[0]);
     exit(1);
