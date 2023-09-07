@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+char *read_user_input();
+
 void shell_loop(){
     int status;
     do{

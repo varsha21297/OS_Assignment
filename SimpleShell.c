@@ -36,15 +36,19 @@ int launch(char *args){
 int create_process_and_run(char *command){
     int status = fork();
     if(status == 0){
-        char *args[] = {command, NULL};
-        execvp(args[0], args);
+        char *argv[3];
+        argv[0] = "/bin/sh";
+        argv[1] = "-c";
+        argv[2] = command;
+        argv[3] = NULL;
+        execv("/bin/sh", argv);
         exit(EXIT_FAILURE);
     }else if(status < 0){
         perror("Error forking");
+
     }else{
-        wait(NULL);
-    }   
-    return 1;
+        waitpid(status, NULL, 0);
+    }
 }
 
 int main(int argc, char **argv){
