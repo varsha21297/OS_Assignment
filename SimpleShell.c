@@ -23,7 +23,7 @@ int create_process_and_run(char *command){
         argv[1] = "-c";
         argv[2] = command;
         argv[3] = NULL;
-        execv("/bin/sh", argv);
+        execvp("/bin/sh", argv);
         exit(EXIT_FAILURE);
     }else if(status < 0){
         perror("Error");
