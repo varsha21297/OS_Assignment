@@ -8,13 +8,23 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+char *read_user_input();
+
 void shell_loop(){
     int status;
     do{
         printf("> ");
         char *line = read_user_input();
         status= launch(line);
+        free(line);
     }while(status);
+}
+
+char *read_user_input(){
+    char *line = NULL;
+    ssize_t bufsize = 0;
+    getline(&line, &bufsize, stdin);
+    return line;
 }
 
 int launch(char *args){
