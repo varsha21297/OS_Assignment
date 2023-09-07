@@ -8,29 +8,11 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
-char *read_user_input();
-
-void shell_loop(){
-    int status;
-    do{
-        printf("> ");
-        char *line = read_user_input();
-        status= launch(line);
-        free(line);
-    }while(status);
-}
-
 char *read_user_input(){
     char *line = NULL;
     ssize_t bufsize = 0;
     getline(&line, &bufsize, stdin);
     return line;
-}
-
-int launch(char *args){
-    int status;
-    status= create_process_and_run(args);
-    return status;
 }
 
 int create_process_and_run(char *command){
@@ -49,6 +31,22 @@ int create_process_and_run(char *command){
     }else{
         waitpid(status, NULL, 0);
     }
+}
+
+int launch(char *args){
+    int status;
+    status= create_process_and_run(args);
+    return status;
+}
+
+void shell_loop(){
+    int status;
+    do{
+        printf("> ");
+        char *line = read_user_input();
+        status= launch(line);
+        free(line);
+    }while(status);
 }
 
 int main(int argc, char **argv){
