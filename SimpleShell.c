@@ -44,7 +44,7 @@ int create_process_and_run(char *command){
         execv("/bin/sh", argv);
         exit(EXIT_FAILURE);
     }else if(status < 0){
-        perror("Error forking");
+        perror("Error");
 
     }else{
         waitpid(status, NULL, 0);
