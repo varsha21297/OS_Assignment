@@ -72,7 +72,7 @@ int create_process_and_run(char* args[]) {
     pid = fork();
 
     if (pid < 0) {
-        perror("Fork error");
+        perror("error forking");
         return 1;
     } 
     
@@ -88,7 +88,7 @@ int create_process_and_run(char* args[]) {
     else {
         // Parent process
         waitpid(pid, NULL, 0);
-        printf("Child process (PID %d) terminated\n", pid);
+        //printf("Child process (PID %d) terminated\n", pid);
     }
 
     return 1; // Continue the shell loop
