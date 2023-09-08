@@ -84,8 +84,11 @@ void load_and_run_elf(char** exe) {
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, -1 , 0);
 
   void* actual= ehdr->e_entry-(address+offset);
-  unsigned int *ptr = &actual;
-  memcpy(virtual_mem, ptr, sizeof(actual));
+
+  //copy the segment of pt load
+  lseek(fd, p_off, SEEK_SET); 
+  read(fd, virtual_mem, phdr->p_filesz);
+  
 
 
   typedef int (*StartFunc)();
