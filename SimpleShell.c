@@ -9,7 +9,7 @@ char storeHistory[1000][100];
 int count = 0;
 
 void addHistory(char *command) {
-    if (count < 1000) { // Fix the limit
+    if (count < 1000) { 
         strcpy(storeHistory[count], command);
         count++;
     } else {
@@ -27,7 +27,7 @@ void showHistory() {
     }
 }
 
-// Function to read user input and tokenize it
+// Function to read user input and split it by spaces
 int read_input(char *line, char *args[]) {
     size_t buffer = 0;
     ssize_t read;
