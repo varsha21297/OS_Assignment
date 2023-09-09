@@ -5,15 +5,20 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <time.h>
 
 char storeHistory[1000][100];
 pid_t storepid[1000];
+time_t total_time[1000];
+time_t start_time[1000];
+time_t end_time[1000];
 int count = 0;
 
 void addHistory(char *command, pid_t pid) {
     if (count < 1000) { 
         strcpy(storeHistory[count], command);
         storepid[count] = pid;
+        time(&start_time[count]);
         count++;
     } else {
         for (int i = 1; i < 1000; i++) {
@@ -34,9 +39,14 @@ void showHistory() {
 
 void showPID() {
     for (int i = 0; i < count; i++) {
-        printf("%d\n", storepid[i]);
+        printf("%d\t", storepid[i]);
+        printf("Time at which command was executed: %ld\t", start_time[i]);
+        time(&end_time[i]);
+        total_time[i] = end_time[i] - start_time[i];
+        printf("Time taken to execute the command: %ld\n", total_time[i]);
     }
 }
+
 
 void my_handler(int sig) {
     printf("\n");
