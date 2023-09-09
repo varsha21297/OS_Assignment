@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 char storeHistory[1000][100];
 pid_t storepid[1000];
@@ -27,9 +28,20 @@ void addHistory(char *command, pid_t pid) {
 
 void showHistory() {
     for (int i = 0; i < count; i++) {
-        printf("%s\t", storeHistory[i]);
+        printf("%s\n", storeHistory[i]);
+    }
+}
+
+void showPID() {
+    for (int i = 0; i < count; i++) {
         printf("%d\n", storepid[i]);
     }
+}
+
+void signal_z(int sig) {
+    printf("\n");
+    showPID();
+    exit(0);
 }
 
 // Function to read user input and split it by spaces
@@ -135,6 +147,10 @@ void shell_loop() {
 }
 
 int main() {
+    if (signal(SIGTSTP, signal_z) == SIG_ERR) {
+        perror("signal error");
+        return 1;
+    }
     shell_loop();
     return 0;
 }
