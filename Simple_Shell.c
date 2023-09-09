@@ -17,9 +17,11 @@ void addHistory(char *command, pid_t pid) {
     } else {
         for (int i = 1; i < 1000; i++) {
             strcpy(storeHistory[i - 1], storeHistory[i]);
+            storepid[i - 1] = storepid[i];
         }
 
         strcpy(storeHistory[999], command);
+        storepid[999] = pid;
     }
 }
 
@@ -115,7 +117,7 @@ int launch(char *command) {
         status = 0; // terminate shell
     } else {
         status = create_process_and_run(args); // for all other commands
-        addHistory(args[0], getpid());
+        //addHistory(args[0], getpid());
     }
 
     return status;
