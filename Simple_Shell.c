@@ -39,8 +39,8 @@ void showHistory() {
 
 void showPID() {
     for (int i = 0; i < count; i++) {
-        printf("%d\t", storepid[i]);
-        
+        printf("Command: %s\t", storeHistory[i]);
+        printf("PID: %d\t", storepid[i]);
         printf("Time at which command was executed: %ld\t", start_time[i]);
         time(&end_time[i]);
         total_time[i] = end_time[i] - start_time[i];
