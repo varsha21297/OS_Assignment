@@ -38,7 +38,7 @@ void showPID() {
     }
 }
 
-void signal_z(int sig) {
+void my_handler(int sig) {
     printf("\n");
     showPID();
     exit(0);
@@ -147,7 +147,7 @@ void shell_loop() {
 }
 
 int main() {
-    if (signal(SIGTSTP, signal_z) == SIG_ERR) {
+    if (signal(SIGTSTP, my_handler) == SIG_ERR) {
         perror("signal error");
         return 1;
     }
