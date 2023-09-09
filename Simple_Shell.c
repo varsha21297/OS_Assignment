@@ -147,8 +147,8 @@ void shell_loop() {
 }
 
 int main() {
-    if (signal(SIGTSTP, my_handler) == SIG_ERR) {
-        perror("signal error");
+    if (signal(SIGINT, my_handler) == SIG_ERR) {
+        perror("Signal error");
         return 1;
     }
     shell_loop();
