@@ -6,13 +6,11 @@
 #include <sys/wait.h>
 
 char storeHistory[1000][100];
-pid_t storepid[1000];
 int count = 0;
 
-void addHistory(char *command, pid_t pid) {
+void addHistory(char *command) {
     if (count < 1000) { 
         strcpy(storeHistory[count], command);
-        storepid[count] = pid;
         count++;
     } else {
         for (int i = 1; i < 1000; i++) {
@@ -25,8 +23,7 @@ void addHistory(char *command, pid_t pid) {
 
 void showHistory() {
     for (int i = 0; i < count; i++) {
-        printf("%s\t", storeHistory[i]);
-        printf("%d\n", storepid[i]);
+        printf("%s\n", storeHistory[i]);
     }
 }
 
@@ -79,7 +76,6 @@ int create_process_and_run(char *args[]) {
     } else {
         // Parent process
         waitpid(pid, NULL, 0);
-        addHistory(args[0], pid);
         printf("Child process (PID %d) terminated\n", pid);
     }
 
@@ -100,7 +96,7 @@ int launch(char *command) {
     int num_args, status;
 
     num_args = read_input(command, args); // number of arguments
-    //addHistory(command);
+    addHistory(command);
 
     if (strcmp(args[0], "cd") == 0) {
         if (num_args != 2) {
@@ -115,7 +111,6 @@ int launch(char *command) {
         status = 0; // terminate shell
     } else {
         status = create_process_and_run(args); // for all other commands
-        addHistory(args[0], getpid());
     }
 
     return status;
@@ -129,7 +124,6 @@ void shell_loop() {
         printf("YoyoShell$ ");
         status = launch(input);
     } while (status);
-    //showHistory();
 }
 
 int main() {
