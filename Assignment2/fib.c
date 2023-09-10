@@ -7,10 +7,9 @@ int fib(int n) {
     return fib(n - 1) + fib(n - 2);
 }
 
-int main(){
-    int n;
-    printf("Enter a number: ");
-    scanf("%d", &n);
-    printf("Fibonacci of %d is %d\n", n, fib(n));
+int main(int argc, char *argv[]){
+    int n= argv[1];
+    int result = fib(n);
+    printf("fib(%d) = %d\n", n, result);
     return 0;
 }
