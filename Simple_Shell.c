@@ -276,7 +276,7 @@ void shell_loop() {
     int status;
 
     do { //infinite loop untill exit command is given
-        printf("YoyoShell$ ");
+        printf("Group72Shell$ ");
         status = launch(input);
     } while (status);
     //showHistory();
