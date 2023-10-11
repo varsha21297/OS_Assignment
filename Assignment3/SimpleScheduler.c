@@ -84,87 +84,6 @@ int read_input(char *line, char *args[]) {
     return i;
 }
 
-int execute_pipeline(char *pipeline[], int num_commands) {
-    int status = 0;
-
-    int pipes[num_commands - 1][2]; // Create an array of pipes
-
-    for (int i = 0; i < num_commands; i++) {
-        char *command_args[100];
-        int num_args = 0;
-
-        // Tokenize the individual command by spaces
-        char *token = strtok(pipeline[i], " ");
-        while (token != NULL) {
-
-            //printf("%s\n",token);
-
-            command_args[num_args] = token;
-            token = strtok(NULL, " ");
-            num_args++;
-        }
-        command_args[num_args] = NULL;
-
-        // for (int i=0 ; i<num_args ; i++) {
-        //     printf("%s\n",command_args[i]);
-        // }
-
-        if (i < num_commands - 1) {
-            // If not the last command, create a pipe
-            if (pipe(pipes[i]) == -1) {
-                perror("Pipe creation failed");
-                return 1;
-            }
-        }
-
-        pid_t child_pid = fork();
-
-        if (child_pid == -1) {
-            perror("Fork failed");
-            return 1;
-        } else if (child_pid == 0) {
-            // This is the child process
-
-            // Redirect input from the previous command (if not the first command)
-            if (i > 0) {
-                dup2(pipes[i - 1][0], STDIN_FILENO);
-                close(pipes[i - 1][0]);
-            }
-
-            // Redirect output to the next command (if not the last command)
-            if (i < num_commands - 1) {
-                dup2(pipes[i][1], STDOUT_FILENO);
-                close(pipes[i][1]);
-            }
-
-            // Close all pipe file descriptors in child processes
-            for (int j = 0; j < num_commands - 1; j++) {
-                close(pipes[j][0]);
-                close(pipes[j][1]);
-            }
-
-            // Execute the command
-            execvp(command_args[0], command_args);
-            perror("Command execution error");
-            exit(EXIT_FAILURE);
-        } else {
-            // This is the parent process
-
-            // Close pipe file descriptors in the parent process
-            if (i > 0) {
-                close(pipes[i - 1][0]);
-                close(pipes[i - 1][1]);
-            }
-
-            // Wait for the child process to finish
-            waitpid(child_pid, &status, 0);
-            addHistory(pipeline[i],getpid());
-        }
-    }
-
-    //return WEXITSTATUS(status);
-    return 1;
-}
 
 
 // Function to create a child process and run a command
@@ -234,37 +153,9 @@ int launch(char *command) {
     } else if (strcmp(args[0], "exit") == 0) {
         status = 0; // Terminate the shell
     } else {
-        // Check for pipes in args
-        int hasPipe = 0;
-
-        for (int i = 0; i < num_args; i++) {
-            if (strcmp(args[i], "|") == 0) {
-                hasPipe = 1;
-                break;
-            }
-        }
-
-        if (hasPipe) {
-            char *pipeline[100];
-            int pipeline_index = 0;
-
-            // Tokenize the command by pipe using strtok
-            char *token = strtok(command, "|");
-            while (token != NULL) {
-                //printf("%s\n",token);
-                pipeline[pipeline_index] = token;
-                pipeline_index++;
-                token = strtok(NULL, "|");
-            }
-            pipeline[pipeline_index] = NULL;
-
-            // Handle piped commands
-            status = execute_pipeline(pipeline, pipeline_index);
-        } else {
-            // For regular commands, create a process and run
-            status = create_process_and_run(args);
-            //addHistory(args[0], getpid());
-        }
+        // For regular commands, create a process and run
+        status = create_process_and_run(args);
+        //addHistory(args[0], getpid());
     }
 
 
@@ -280,6 +171,31 @@ void shell_loop() {
         status = launch(input);
     } while (status);
     //showHistory();
+}
+
+int submit(char *args[]){
+    pid_t pid, wpid;
+    int status;
+
+    pid = fork(); // Create a child process
+
+    if (pid < 0) {
+        perror("Fork error");
+        return 1;
+    } else if (pid == 0) {
+        // Child process
+        // Execute the command in the child process
+        if (execvp(args[0], args) == -1) {
+            perror("Command execution error");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        // Parent process
+        addHistory(args[0], pid); // Add the command to history
+        printf("Child process (PID %d) terminated\n", pid);
+    }
+
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
