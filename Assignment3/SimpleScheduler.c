@@ -162,17 +162,6 @@ int launch(char *command) {
     return status;
 }
 
-void shell_loop() {
-    char input[100];
-    int status;
-
-    do { //infinite loop untill exit command is given
-        printf("Group72Shell$ ");
-        status = launch(input);
-    } while (status);
-    //showHistory();
-}
-
 int submit(char *args[]){
     pid_t pid, wpid;
     int status;
@@ -196,6 +185,17 @@ int submit(char *args[]){
     }
 
     return 1;
+}
+
+void shell_loop() {
+    char input[100];
+    int status;
+
+    do { //infinite loop untill exit command is given
+        printf("Group72Shell$ ");
+        status = launch(input);
+    } while (status);
+    //showHistory();
 }
 
 int main(int argc, char *argv[]) {
