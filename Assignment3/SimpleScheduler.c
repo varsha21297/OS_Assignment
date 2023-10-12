@@ -14,6 +14,43 @@ time_t start_time[1000]; //array to store the start time of the commands
 time_t end_time[1000]; //array to store the end time of the commands
 int count = 0; //variable to keep track of the number of commands executed
 
+int ncpu;
+int tslice;
+
+int create_shared_memory() {
+    const int SIZE = 4096;
+    const char* name = "OS";
+    
+    int shm_fd;
+    void* ptr;
+    
+    // Create or open the shared memory object
+    shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
+    if (shm_fd == -1) {
+        perror("shm_open");
+        return 1;  // Return an error code
+    }
+
+    // Set the size of the shared memory object
+    if (ftruncate(shm_fd, SIZE) == -1) {
+        perror("ftruncate");
+        return 1;  // Return an error code
+    }
+
+    // Map the shared memory object into the address space
+    ptr = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (ptr == MAP_FAILED) {
+        perror("mmap");
+        return 1;  // Return an error code
+    }
+    
+    // Store NCPU and TSLICE in shared memory
+    memcpy(ptr, &ncpu, sizeof(int));
+    memcpy(ptr + sizeof(int), &tslice, sizeof(int));
+
+    return 0;
+}
+
 /*void addHistory(char *command, pid_t pid) {
     if (count < 1000) { 
         strcpy(storeHistory[count], command);
@@ -212,6 +249,8 @@ int main(int argc, char *argv[]) {
 
     int ncpu = atoi(argv[1]);
     int tslice = atoi(argv[2]);
+
+    create_shared_memory();
 
     if (signal(SIGINT, my_handler) == SIG_ERR) { //registering the signal handler for SIGINT; if error occurs, print error message
         perror("Signal error");
