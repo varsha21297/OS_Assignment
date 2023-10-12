@@ -7,10 +7,10 @@ int fib(int n) {
     return fib(n - 1) + fib(n - 2);
 }
 
-int main(int argc, char**argv){
-    int n = atoi(argv[1]);
-    int result = fib(n);
-    printf("%d\n", result); // Print the result to standard output
 
+int main(int argc, char *argv[]){
+    int n= argv[1];
+    int result = fib(n);
+    printf("fib(%d) = %d\n", n, result);
     return 0;
 }
