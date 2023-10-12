@@ -87,7 +87,7 @@ int read_input(char *line, char *args[]) {
 
 
 // Function to create a child process and run a command
-int create_process_and_run(char *args[]) {
+/*int create_process_and_run(char *args[]) {
     pid_t pid, wpid;
     int status;
 
@@ -111,7 +111,7 @@ int create_process_and_run(char *args[]) {
     }
 
     return 1;
-}
+}*/
 
 int change_directory(char *directory) {
     if (chdir(directory) == 0) { // change directory
@@ -152,11 +152,16 @@ int launch(char *command) {
         status = 1;
     } else if (strcmp(args[0], "exit") == 0) {
         status = 0; // Terminate the shell
-    } else {
+    } else if (strcmp(args[0], "submit")==0){
+        submit(args);
+        status=1;
+    }
+    
+    /*else {
         // For regular commands, create a process and run
         status = create_process_and_run(args);
         //addHistory(args[0], getpid());
-    }
+    }*/
 
 
     return status;
@@ -172,19 +177,20 @@ int submit(char *args[]){
         perror("Fork error");
         return 1;
     } else if (pid == 0) {
+        exit(0);
         // Child process
-        // Execute the command in the child process
-        if (execvp(args[0], args) == -1) {
-            perror("Command execution error");
-            exit(EXIT_FAILURE);
-        }
     } else {
         // Parent process
+        //waitpid(pid, NULL, 0); // Wait for the child process to finish
         addHistory(args[0], pid); // Add the command to history
         printf("Child process (PID %d) terminated\n", pid);
     }
 
     return 1;
+}
+
+void scheduler(){
+
 }
 
 void shell_loop() {
