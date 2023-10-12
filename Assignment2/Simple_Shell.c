@@ -14,26 +14,7 @@ time_t start_time[1000]; //array to store the start time of the commands
 time_t end_time[1000]; //array to store the end time of the commands
 int count = 0; //variable to keep track of the number of commands executed
 
-int NCPU;
-int TSLICE;
 
-int create_shared_memory() { //create shared memory
-    const int SIZE = 4096;
-    const char* name = "OS";
-    
-    int shm_fd;
-    void* ptr;
-    
-    shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, SIZE);
-    ptr = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    
-    // Store NCPU and TSLICE in shared memory
-    memcpy(ptr, &NCPU, sizeof(int));
-    memcpy(ptr + sizeof(int), &TSLICE, sizeof(int));
-    
-    return 0;
-} 
 
 void addHistory(char *command, pid_t pid) {
     if (count < 1000) { 
@@ -322,14 +303,7 @@ void shell_loop(int NCPU, int TSLICE) {
 }
 
 int main() {
-    int NCPU, TSLICE;
-    printf("Enter NCPU - ");
-    scanf("%d",&NCPU);
 
-    printf("Enter TSLICE - ");
-    scanf("%d",&TSLICE);
-
-    create_shared_memory();  // Create and store NCPU and TSLICE in shared memory
 
     if (signal(SIGINT, my_handler) == SIG_ERR) { //registering the signal handler for SIGINT; if error occurs, print error message
         perror("Signal error");
