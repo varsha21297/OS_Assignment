@@ -14,7 +14,7 @@ time_t start_time[1000]; //array to store the start time of the commands
 time_t end_time[1000]; //array to store the end time of the commands
 int count = 0; //variable to keep track of the number of commands executed
 
-void addHistory(char *command, pid_t pid) {
+/*void addHistory(char *command, pid_t pid) {
     if (count < 1000) { 
         strcpy(storeHistory[count], command);
         storepid[count] = pid;
@@ -29,9 +29,9 @@ void addHistory(char *command, pid_t pid) {
         strcpy(storeHistory[999], command); //add the command to the last position
         storepid[999] = pid; //add the command and PID to the last position
     }
-}
+}*/
 
-void showHistory() {
+/*void showHistory() {
     for (int i = 0; i < count; i++) {
         printf("%s\n", storeHistory[i]);
     }
@@ -46,12 +46,12 @@ void showPID() { //function to print the PID, command, time at which command was
         total_time[i] = end_time[i] - start_time[i]; //calculate the total time
         printf("Time taken to execute the command: %ld\n", total_time[i]);
     }
-}
+}*/
 
 
 void my_handler(int sig) { //function to handle the SIGINT signal
     printf("\n");
-    showPID();
+    //showPID();
     exit(0);
 }
 
@@ -148,7 +148,7 @@ int launch(char *command) {
             status = change_directory(args[1]);
         }
     } else if (strcmp(args[0], "history") == 0) {
-        showHistory(); // Show history
+        //showHistory(); // Show history
         status = 1;
     } else if (strcmp(args[0], "exit") == 0) {
         status = 0; // Terminate the shell
@@ -182,7 +182,7 @@ int submit(char *args[]){
     } else {
         // Parent process
         //waitpid(pid, NULL, 0); // Wait for the child process to finish
-        addHistory(args[0], pid); // Add the command to history
+        //addHistory(args[0], pid); // Add the command to history
         printf("Child process (PID %d) terminated\n", pid);
     }
 
