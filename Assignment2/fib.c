@@ -7,6 +7,7 @@ int fib(int n) {
     return fib(n - 1) + fib(n - 2);
 }
 
+
 int main(int argc, char *argv[]){
     int n = 0;
     if (argc == 2) {
