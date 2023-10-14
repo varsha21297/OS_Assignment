@@ -244,7 +244,52 @@ int change_directory(char *directory) {
     }
 }
 
+void start_scheduler() {
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("Fork error");
+    } else if (pid == 0) {
+        // Child process
+        // Set the child process as a new session leader to run as a daemon
+        if (setsid() == -1) {
+            perror("setsid error");
+            exit(EXIT_FAILURE);
+        }
+
+        // Close standard file descriptors
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+
+        // Create a new shared memory region and store ncpu and tslice
+        if (create_shared_memory() == 1) {
+            exit(EXIT_FAILURE);
+        }
+
+        // Execute the scheduler program
+        char* args[] = {"./scheduler", NULL};
+        execvp(args[0], args);
+        perror("execvp error");
+
+        exit(EXIT_FAILURE);
+    } 
+
+    else {
+        // Parent process
+        // Wait for the child process to start
+        sleep(1);
+    }
+}
+
 int submit(char *args[]){
+
+    if (create_shared_memory() == 1) {
+        return 1;
+    }
+
+    start_scheduler();
+
     pid_t pid, wpid;
     int status;
 
@@ -308,7 +353,7 @@ int launch(char *command) {
                 int priority = atoi(args[2]);
             }
 
-            status = create_process_and_run(args);
+            status = submit(args);
         }
         else {
             printf("missing arguments\n");
@@ -372,9 +417,12 @@ int main(int argc, char *argv[]) {
     int ncpu = atoi(argv[1]);
     int tslice = atoi(argv[2]);
 
+    if (ncpu <= 0 || tslice <= 0) {
+        printf("Please set valid values for ncpu and tslice.\n");
+        return 1;
+    }
 
-    create_shared_memory();  // Create and store NCPU and TSLICE in shared memory
-
+    //create_shared_memory();  // Create and store NCPU and TSLICE in shared memory
 
     if (signal(SIGINT, my_handler) == SIG_ERR) { //registering the signal handler for SIGINT; if error occurs, print error message
         perror("Signal error");
