@@ -9,66 +9,128 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include "dummy_main.h"
+#include <time.h>
 
 int ncpu;
 int tslice;
 int ready_count = 0;
 int running_count = 0;
-pid_t ready_processes[MAX_PROCESSES];
-pid_t running_processes[MAX_PROCESSES];
-int priorities[MAX_PROCESSES];
+
+// Define a structure to represent a process
+typedef struct {
+    pid_t pid;
+    int priority;
+    int burst_time;
+    time_t start_time; 
+    time_t end_time;   
+} Process;
 
 const char* SHARED_MEM_NAME = "OS";
 
-void sigchld_handler(int signo) {
-    int status;
-    pid_t pid;
+Process ready_processes[100];
+Process running_processes[100];
+int total_processes = 0;
 
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        // Process with PID pid has terminated
-        // Decrement running_count and remove the terminated process from the array
-        running_count--;
-        for (int i = 0; i < ncpu; i++) {
-            if (running_processes[i] == pid) {
-                running_processes[i] = 0;
+// Create a priority queue structure
+typedef struct {
+    Process array[100];
+    int size;
+} PriorityQueue;
+
+PriorityQueue createPriorityQueue() {
+    PriorityQueue pq;
+    pq.size = 0;
+    return pq;
+}
+
+// Add a process to the priority queue
+void insert (PriorityQueue* pq, Process process) {
+    if (pq->size < 100) {
+        pq->array[pq->size] = process;
+        pq->size++;
+
+        int current = pq->size - 1;
+        while (current > 0) {
+            int parent = (current - 1) / 2;
+            if (pq->array[current].priority < pq->array[parent].priority) {
+                // Swap the process with its parent
+                Process temp = pq->array[current];
+                pq->array[current] = pq->array[parent];
+                pq->array[parent] = temp;
+                current = parent;
+            } else {
                 break;
             }
         }
     }
 }
 
-void add_process_to_ready_queue(pid_t pid, int priority) {
-    if (ready_count < MAX_PROCESSES) {
-        // Insert the process in a sorted order based on priority
-        int i;
-        for (i = ready_count - 1; i >= 0 && priorities[i] < priority; i--) {
-            ready_processes[i + 1] = ready_processes[i];
-            priorities[i + 1] = priorities[i];
+// Remove and return the process with the highest priority
+Process extractMin(PriorityQueue* pq) {
+    if (pq->size == 0) {
+        Process empty = {0, 0, 0};
+        return empty;
+    }
+
+    Process min = pq->array[0];
+    pq->size--;
+
+    if (pq->size > 0) {
+        pq->array[0] = pq->array[pq->size];
+        int current = 0;
+
+        while (1) {
+            int left = 2 * current + 1;
+            int right = 2 * current + 2;
+            int smallest = current;
+
+            if (left < pq->size && pq->array[left].priority < pq->array[smallest].priority) {
+                smallest = left;
+            }
+
+            if (right < pq->size && pq->array[right].priority < pq->array[smallest].priority) {
+                smallest = right;
+            }
+
+            if (smallest != current) {
+                // Swap the process with the smallest priority child
+                Process temp = pq->array[current];
+                pq->array[current] = pq->array[smallest];
+                pq->array[smallest] = temp;
+                current = smallest;
+            } else {
+                break;
+            }
         }
-        ready_processes[i + 1] = pid;
-        priorities[i + 1] = priority;
+    }
+
+    return min;
+}
+
+void add_process_to_ready_queue(pid_t pid, int priority, int burst_time) {
+    if (ready_count < 100) {
+        Process process = {pid, priority, burst_time, 0, 0}; // Initialize start and end times
+        insert(&ready_processes, process);
         ready_count++;
-    } 
+    }
 }
 
 void schedule() {
     signal(SIGCHLD, sigchld_handler);
 
-    while (1) {
+    while (total_processes > 0) {
         // Move any ready processes to the running state
         while (ready_count > 0 && running_count < ncpu) {
-            pid_t next_process = ready_processes[0];
+            Process next_process = extractMin(&ready_processes);
 
-            // Remove the selected process from the ready queue
-            for (int i = 0; i < ready_count - 1; i++) {
-                ready_processes[i] = ready_processes[i + 1];
-                priorities[i] = priorities[i + 1];
+            if (next_process.pid == 0) {
+                break;
             }
-            ready_count--;
 
             // Start the process on the first available CPU
             for (int i = 0; i < ncpu; i++) {
-                if (running_processes[i] == 0) {
+                if (running_processes[i].pid == 0) {
+                    next_process.start_time = time(NULL); // Record start time
                     running_processes[i] = next_process;
                     running_count++;
                     break;
@@ -76,23 +138,46 @@ void schedule() {
             }
 
             // Signal the process to start execution
-            kill(next_process, SIGCONT);
+            kill(next_process.pid, SIGCONT);
         }
 
         // Sleep for the time quantum (tslice)
         usleep(tslice);
 
-        // Stop running processes and move them to the ready queue
+        // Check and reschedule processes with burst times greater than tslice
         for (int i = 0; i < ncpu; i++) {
-            if (running_processes[i] != 0) {
+            if (running_processes[i].pid != 0) {
                 // Send a SIGSTOP signal to pause the process
-                kill(running_processes[i], SIGSTOP);
+                kill(running_processes[i].pid, SIGSTOP);
 
-                // Move the process back to the ready queue
-                add_process_to_ready_queue(running_processes[i], priorities[i]);
-                running_processes[i] = 0;
+                // Check if the process has remaining burst time
+                if (running_processes[i].burst_time > tslice) {
+                    // Subtract tslice from burst time
+                    running_processes[i].burst_time -= tslice;
+
+                    // Add the process back to the ready queue
+                    insert(&ready_processes, running_processes[i]);
+                    ready_count--;
+                } else {
+                    // Process completed, decrement the total process count
+                    total_processes--;
+                    running_processes[i].end_time = time(NULL); // Record end time
+                }
+
+                // Clear the running process
+                running_processes[i].pid = 0;
                 running_count--;
             }
+        }
+    }
+
+    // Print the PID, total execution time, and wait time for each process
+    for (int i = 0; i < ncpu; i++) {
+        if (running_processes[i].pid != 0) {
+            time_t execution_time = running_processes[i].end_time - running_processes[i].start_time;
+            time_t wait_time = execution_time - running_processes[i].burst_time;
+
+            printf("PID: %d\n Execution Time: %ld seconds\n Wait Time: %ld seconds\n", running_processes[i].pid, execution_time, wait_time);
         }
     }
 }
@@ -110,6 +195,7 @@ int main(int argc, char* argv[]) {
     memcpy(&ncpu, ptr, sizeof(int));
     memcpy(&tslice, ptr + sizeof(int), sizeof(int));
 
+    printf("%d, %d\n", ncpu, tslice);
 
     if (fork() == 0) {
         schedule();
