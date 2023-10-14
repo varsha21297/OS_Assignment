@@ -122,34 +122,6 @@ int read_input(char *line, char *args[]) {
 }
 
 
-
-// Function to create a child process and run a command
-/*int create_process_and_run(char *args[]) {
-    pid_t pid, wpid;
-    int status;
-
-    pid = fork(); // Create a child process
-
-    if (pid < 0) {
-        perror("Fork error");
-        return 1;
-    } else if (pid == 0) {
-        // Child process
-        // Execute the command in the child process
-        if (execvp(args[0], args) == -1) {
-            perror("Command execution error");
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        // Parent process
-        waitpid(pid, NULL, 0); // Wait for the child process to finish
-        addHistory(args[0], pid); // Add the command to history
-        printf("Child process (PID %d) terminated\n", pid);
-    }
-
-    return 1;
-}*/
-
 int change_directory(char *directory) {
     if (chdir(directory) == 0) { // change directory
         return 1;
@@ -206,7 +178,7 @@ int launch(char *command) {
 
 int submit(char *args[]){
     pid_t pid, wpid;
-    int status;
+    //int status;
 
     pid = fork(); // Create a child process
 
@@ -214,12 +186,15 @@ int submit(char *args[]){
         perror("Fork error");
         return 1;
     } else if (pid == 0) {
+        struct sigaction sig;
+        memset(&sig, 0, sizeof(sig));
+        sig.sa_handler = my_handler;
+        sigaction(SIGCHLD, &sig, NULL);
         exit(0);
         // Child process
     } else {
         // Parent process
-        //waitpid(pid, NULL, 0); // Wait for the child process to finish
-        //addHistory(args[0], pid); // Add the command to history
+        waitpid(pid, NULL, 0);
         printf("Child process (PID %d) terminated\n", pid);
     }
 
