@@ -288,7 +288,7 @@ void start_scheduler() {
     }
 }
 
-int submit(char *args[], struct ProcessInfo *processInfo) {
+int submit(char *args[], struct ProcessInfo ProcessInfo, void* ptr) {
 
     //start_scheduler();
 
@@ -301,11 +301,8 @@ int submit(char *args[], struct ProcessInfo *processInfo) {
         perror("Fork error");
         return 1;
     } else if (pid == 0) {
-        processInfo->pid = pid; //stored the process pid
-        struct ProcessInfo *ptr;
-        int shm_fd1 = shm_open("OS", O_CREAT | O_RDWR, 0666); //open the shared memory
-        ptr= mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0); //map the shared memory
-        memcpy(ptr, &processInfo, sizeof(struct ProcessInfo)); //Write the ProcessInfo struct to shared memory
+        ProcessInfo.pid = pid; //stored the process pid
+        memcpy(ptr, &ProcessInfo, sizeof(struct ProcessInfo)); //Write the ProcessInfo struct to shared memory
         start_scheduler(); 
         exit(0);        
         // Child process
@@ -319,7 +316,7 @@ int submit(char *args[], struct ProcessInfo *processInfo) {
 }
 
 
-int launch(char *command) {
+int launch(char *command, void* ptr) {
     char *args[100];
     int num_args, status;
 
@@ -362,8 +359,11 @@ int launch(char *command) {
             }
 
             processInfo.value = priority;
-            status = submit(args,&processInfo);
-            addHistory(args[0], getpid());
+            status = submit(args, processInfo, ptr);
+
+            if (status == 1) {
+                addHistory(command, getpid()); //submit command added in history
+            }
         }
         else {
             printf("missing arguments\n");
@@ -399,7 +399,7 @@ int launch(char *command) {
         } else {
             // For regular commands, create a process and run
             status = create_process_and_run(args);
-            addHistory(args[0], getpid());
+            //addHistory(args[0], getpid());
         }
     }
 
@@ -407,13 +407,13 @@ int launch(char *command) {
     return status;
 }
 
-void shell_loop() {
+void shell_loop(void* ptr) {
     char input[100];
     int status;
 
     do { //infinite loop untill exit command is given
         printf("Group72Shell$ ");
-        status = launch(input);
+        status = launch(input, ptr);
     } while (status);
     //showHistory();
 }
@@ -466,6 +466,6 @@ int main(int argc, char *argv[]) {
         perror("Signal error");
         return 1;
     }
-    shell_loop(); //call the shell loop
+    shell_loop(ptr1); //call the shell loop
     return 0;
 }
