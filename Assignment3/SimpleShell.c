@@ -302,6 +302,9 @@ int submit(char *args[], struct ProcessInfo *processInfo) {
         return 1;
     } else if (pid == 0) {
         processInfo->pid = pid; //stored the process pid
+        struct ProcessInfo *ptr;
+        int shm_fd1 = shm_open("OS", O_CREAT | O_RDWR, 0666); //open the shared memory
+        ptr= mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0); //map the shared memory
         memcpy(ptr, &processInfo, sizeof(struct ProcessInfo)); //Write the ProcessInfo struct to shared memory
         start_scheduler(); 
         exit(0);        
@@ -359,7 +362,8 @@ int launch(char *command) {
             }
 
             processInfo.value = priority;
-            status = submit(args,processInfo);
+            status = submit(args,&processInfo);
+            addHistory(args[0], getpid());
         }
         else {
             printf("missing arguments\n");
@@ -395,7 +399,7 @@ int launch(char *command) {
         } else {
             // For regular commands, create a process and run
             status = create_process_and_run(args);
-            //addHistory(args[0], getpid());
+            addHistory(args[0], getpid());
         }
     }
 
