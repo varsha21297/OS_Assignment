@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include "dummy_main.h"
 #include <time.h>
 
 int ncpu;
@@ -21,12 +20,12 @@ typedef struct {
     pid_t pid;
     int priority;
     int burst_time;
-    time_t start_time; 
-    time_t end_time;   
+    time_t start_time;
+    time_t end_time;
 } Process;
 
-const char* name = "OS";
-const char* name1 = "pidAndPriority";
+const char *name = "OS";
+const char *name1 = "pidAndPriority";
 
 Process ready_processes[100];
 Process running_processes[100];
@@ -45,7 +44,7 @@ PriorityQueue createPriorityQueue() {
 }
 
 // Add a process to the priority queue
-void insert (PriorityQueue* pq, Process process) {
+void insert(PriorityQueue *pq, Process process) {
     if (pq->size < 100) {
         pq->array[pq->size] = process;
         pq->size++;
@@ -67,7 +66,7 @@ void insert (PriorityQueue* pq, Process process) {
 }
 
 // Remove and return the process with the highest priority
-Process extractMin(PriorityQueue* pq) {
+Process extractMin(PriorityQueue *pq) {
     if (pq->size == 0) {
         Process empty = {0, 0, 0};
         return empty;
@@ -117,7 +116,8 @@ void add_process_to_ready_queue(pid_t pid, int priority, int burst_time) {
 }
 
 void schedule() {
-    signal(SIGCHLD, sigchld_handler);
+    // You need to define the sigchld_handler function here or remove this line if not used
+    // signal(SIGCHLD, sigchld_handler);
 
     while (total_processes > 0) {
         // Move any ready processes to the running state
@@ -188,13 +188,15 @@ struct ProcessInfo {
     pid_t pid;
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     // Create and access shared memory to read ncpu and tslice values
     const int SIZE = 4096;
-    int shm_fd1,shm_fd;
-    void* ptr1,ptr;
+    int shm_fd1, shm_fd;
+    void *ptr1;
+    void *ptr;
 
-    shm_fd1 = shm_open(SHARED_MEM_NAME, O_RDONLY, 0666);
+    // Replace SHARED_MEM_NAME with the actual shared memory name
+    shm_fd1 = shm_open(name, O_RDONLY, 0666);
     ptr1 = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd1, 0);
 
     // Read ncpu and tslice values from shared memory
@@ -221,15 +223,15 @@ int main(int argc, char* argv[]) {
     printf("Value: %d\n", processInfo.value);
     printf("PID: %d\n", processInfo.pid);
 
-    int burst_time; //i dont know this
-    ready_processes = createPriorityQueue();
-    add_process_to_ready_queue(processInfo.pid,processInfo.value,burst_time);
+    int burst_time; // Set the burst time appropriately
+    createPriorityQueue(); // You don't need to reassign to ready_processes
+    add_process_to_ready_queue(processInfo.pid, processInfo.value, burst_time);
 
     if (fork() == 0) {
         schedule();
     }
 
-    //SimpleShell executable files
+    // SimpleShell executable files
 
     return 0;
 }

@@ -424,8 +424,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int ncpu = atoi(argv[1]);
-    int tslice = atoi(argv[2]);
+    ncpu = atoi(argv[1]);
+    tslice = atoi(argv[2]);
 
     if (ncpu <= 0 || tslice <= 0) {
         printf("Please set valid values for ncpu and tslice.\n");
