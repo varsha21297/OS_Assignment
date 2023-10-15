@@ -19,9 +19,15 @@ int count = 0; //variable to keep track of the number of commands executed
 
 int ncpu;
 int tslice;
+const int SIZE = 4096;
+
+struct ProcessInfo {
+    int value;
+    pid_t pid;
+};
 
 int create_shared_memory() {
-    const int SIZE = 4096;
+
     const char* name = "OS";
     
     int shm_fd;
@@ -282,13 +288,9 @@ void start_scheduler() {
     }
 }
 
-int submit(char *args[]){
+int submit(char *args[], struct ProcessInfo *processInfo) {
 
-    if (create_shared_memory() == 1) {
-        return 1;
-    }
-
-    start_scheduler();
+    //start_scheduler();
 
     pid_t pid, wpid;
     int status;
@@ -299,7 +301,10 @@ int submit(char *args[]){
         perror("Fork error");
         return 1;
     } else if (pid == 0) {
-        exit(0);
+        processInfo->pid = pid; //stored the process pid
+        memcpy(ptr, &processInfo, sizeof(struct ProcessInfo)); //Write the ProcessInfo struct to shared memory
+        start_scheduler(); 
+        exit(0);        
         // Child process
     } else {
         // Parent process
@@ -307,7 +312,6 @@ int submit(char *args[]){
         //addHistory(args[0], pid); // Add the command to history
         printf("Child process (PID %d) terminated\n", pid);
     }
-
     return 1;
 }
 
@@ -348,12 +352,14 @@ int launch(char *command) {
     } 
     else if (strcmp(args[0], "submit") == 0) { 
         if (num_args==2 || num_args==3) {
+            struct ProcessInfo processInfo;
             int priority = 1;
             if (num_args == 3) {
                 int priority = atoi(args[2]);
             }
 
-            status = submit(args);
+            processInfo.value = priority;
+            status = submit(args,processInfo);
         }
         else {
             printf("missing arguments\n");
@@ -422,7 +428,35 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    //create_shared_memory();  // Create and store NCPU and TSLICE in shared memory
+    create_shared_memory();  // Create and store NCPU and TSLICE in shared memory
+
+    if (create_shared_memory() == 1) {
+        return 1;
+    }
+
+    //Creating second shared memory for pid and priority
+    const char* name = "pidAndPriority";
+
+    int shm_fd1;
+    void *ptr1;
+
+    shm_fd1 = shm_open(name, O_CREAT | O_RDWR, 0666);
+    if (shm_fd1 == -1) {
+        perror("cannot create shared memory"); 
+        exit(1);
+    }
+
+    if (ftruncate(shm_fd1, SIZE) == -1) {
+        perror("cannot assign size");
+        exit(1);
+    }
+
+    ptr1 = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0);
+    if (ptr1 == MAP_FAILED) {
+        perror("cannot map the shared memory");
+        exit(1);
+    }
+
 
     if (signal(SIGINT, my_handler) == SIG_ERR) { //registering the signal handler for SIGINT; if error occurs, print error message
         perror("Signal error");

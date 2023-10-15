@@ -25,7 +25,8 @@ typedef struct {
     time_t end_time;   
 } Process;
 
-const char* SHARED_MEM_NAME = "OS";
+const char* name = "OS";
+const char* name1 = "pidAndPriority";
 
 Process ready_processes[100];
 Process running_processes[100];
@@ -182,20 +183,47 @@ void schedule() {
     }
 }
 
+struct ProcessInfo {
+    int value;
+    pid_t pid;
+};
+
 int main(int argc, char* argv[]) {
     // Create and access shared memory to read ncpu and tslice values
     const int SIZE = 4096;
-    int shm_fd;
-    void* ptr;
+    int shm_fd1,shm_fd;
+    void* ptr1,ptr;
 
-    shm_fd = shm_open(SHARED_MEM_NAME, O_RDONLY, 0666);
-    ptr = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
+    shm_fd1 = shm_open(SHARED_MEM_NAME, O_RDONLY, 0666);
+    ptr1 = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd1, 0);
 
     // Read ncpu and tslice values from shared memory
-    memcpy(&ncpu, ptr, sizeof(int));
-    memcpy(&tslice, ptr + sizeof(int), sizeof(int));
+    memcpy(&ncpu, ptr1, sizeof(int));
+    memcpy(&tslice, ptr1 + sizeof(int), sizeof(int));
 
     printf("%d, %d\n", ncpu, tslice);
+
+    //creating shared memory for pid and priority
+    shm_fd = shm_open(name1, O_RDONLY, 0);
+    if (shm_fd == -1) {
+        perror("shm_open");
+        exit(1);
+    }
+
+    ptr = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
+    if (ptr == MAP_FAILED) {
+        perror("mmap");
+        exit(1);
+    }
+
+    struct ProcessInfo processInfo;
+    memcpy(&processInfo, ptr, sizeof(struct ProcessInfo));
+    printf("Value: %d\n", processInfo.value);
+    printf("PID: %d\n", processInfo.pid);
+
+    int burst_time; //i dont know this
+    ready_processes = createPriorityQueue();
+    add_process_to_ready_queue(processInfo.pid,processInfo.value,burst_time);
 
     if (fork() == 0) {
         schedule();
