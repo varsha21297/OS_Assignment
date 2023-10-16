@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include "dummy_main.h"
 #include <time.h>
 
 int ncpu;
@@ -23,6 +22,12 @@ typedef struct {
     time_t start_time;
     time_t end_time;
 } Process;
+
+struct ProcessInfo {
+    int value;
+    pid_t pid;
+    char executable_name[100]; 
+};
 
 const char* name = "OS";
 const char* name1 = "pidAndPriority";
@@ -124,11 +129,10 @@ void check_process_termination(pid_t pid) {
         // Handle error
     } else if (result == 0) {
         // Process is still running within the time slice
-        // You can decide what to do here if the process is still running
+
     } else if (WIFEXITED(status)) {
         // Process has terminated normally
         int exit_status = WEXITSTATUS(status);
-        // You can handle this case as needed
     }
 }
 
@@ -182,9 +186,10 @@ int main(int argc, char* argv[]) {
     // Create and access shared memory to read ncpu and tslice values
     const int SIZE = 4096;
     int shm_fd1, shm_fd;
-    void* ptr1, ptr;
+    void* ptr1;
+    void* ptr;
 
-    shm_fd1 = shm_open(SHARED_MEM_NAME, O_RDWR, 0666);
+    shm_fd1 = shm_open(name, O_RDWR, 0666);
     ptr1 = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0);
 
     // Read ncpu and tslice values from shared memory
@@ -213,7 +218,7 @@ int main(int argc, char* argv[]) {
     printf("Value: %d\n", processInfo.value);
     printf("PID: %d\n", processInfo.pid);
 
-    ready_processes = createPriorityQueue();
+    createPriorityQueue();
     add_process_to_ready_queue(processInfo.pid, processInfo.value);
 
     if (fork() == 0) {

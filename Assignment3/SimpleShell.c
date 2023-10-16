@@ -24,6 +24,7 @@ const int SIZE = 4096;
 struct ProcessInfo {
     int value;
     pid_t pid;
+    char executable_name[100]; 
 };
 
 int create_shared_memory() {
@@ -354,11 +355,15 @@ int launch(char *command, void* ptr) {
         if (num_args==2 || num_args==3) {
             struct ProcessInfo processInfo;
             int priority = 1;
+            char *executable = args[1];
+            
             if (num_args == 3) {
                 int priority = atoi(args[2]);
             }
 
             processInfo.value = priority;
+            strcpy(processInfo.executable_name, executable); // Store the executable name
+
             status = submit(args, processInfo, ptr);
 
             if (status == 1) {
