@@ -8,7 +8,8 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-
+#include "dummy_main.h"
+#include <time.h>
 
 int ncpu;
 int tslice;
@@ -19,6 +20,8 @@ int running_count = 0;
 typedef struct {
     pid_t pid;
     int priority;
+    time_t start_time;
+    time_t end_time;
 } Process;
 
 const char* name = "OS";
@@ -106,14 +109,31 @@ Process extractMin(PriorityQueue* pq) {
 
 void add_process_to_ready_queue(pid_t pid, int priority) {
     if (ready_count < 100) {
-        Process process = {pid, priority};
+        Process process = {pid, priority, 0, 0}; // Initialize start and end times
         insert(&ready_processes, process);
         ready_count++;
     }
 }
 
+void check_process_termination(pid_t pid) {
+    int status;
+    int result = waitpid(pid, &status, WNOHANG); // Use WNOHANG to perform a non-blocking wait
+
+    if (result == -1) {
+        perror("waitpid");
+        // Handle error
+    } else if (result == 0) {
+        // Process is still running within the time slice
+        // You can decide what to do here if the process is still running
+    } else if (WIFEXITED(status)) {
+        // Process has terminated normally
+        int exit_status = WEXITSTATUS(status);
+        // You can handle this case as needed
+    }
+}
+
 void schedule() {
-    signal(SIGCHLD, SIG_IGN);  // Ignore child exit signals
+    signal(SIGCHLD, sigchld_handler);
 
     while (total_processes > 0) {
         // Move any ready processes to the running state
@@ -127,6 +147,7 @@ void schedule() {
             // Start the process on the first available CPU
             for (int i = 0; i < ncpu; i++) {
                 if (running_processes[i].pid == 0) {
+                    next_process.start_time = time(NULL); // Record start time
                     running_processes[i] = next_process;
                     running_count++;
                     break;
@@ -143,8 +164,11 @@ void schedule() {
         // Check and reschedule processes
         for (int i = 0; i < ncpu; i++) {
             if (running_processes[i].pid != 0) {
-                // Process completed, decrement the total process count
-                total_processes--;
+                // Send a SIGSTOP signal to pause the process
+                kill(running_processes[i].pid, SIGSTOP);
+
+                // Check if the process has terminated within the time slice
+                check_process_termination(running_processes[i].pid);
 
                 // Clear the running process
                 running_processes[i].pid = 0;
@@ -158,9 +182,9 @@ int main(int argc, char* argv[]) {
     // Create and access shared memory to read ncpu and tslice values
     const int SIZE = 4096;
     int shm_fd1, shm_fd;
-    void* ptr1;
+    void* ptr1, ptr;
 
-    shm_fd1 = shm_open(name, O_RDWR, 0666);
+    shm_fd1 = shm_open(SHARED_MEM_NAME, O_RDWR, 0666);
     ptr1 = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0);
 
     // Read ncpu and tslice values from shared memory
@@ -171,8 +195,6 @@ int main(int argc, char* argv[]) {
 
     // Creating shared memory for pid and priority
     shm_fd = shm_open(name1, O_RDWR, 0);
-    void* ptr;
-
     ptr = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
 
     if (shm_fd == -1) {
@@ -186,18 +208,18 @@ int main(int argc, char* argv[]) {
     }
 
     // Read process information from shared memory
-    Process processInfo;
-    memcpy(&processInfo, ptr, sizeof(Process));
+    struct ProcessInfo processInfo;
+    memcpy(&processInfo, ptr, sizeof(struct ProcessInfo));
     printf("Value: %d\n", processInfo.value);
     printf("PID: %d\n", processInfo.pid);
 
+    ready_processes = createPriorityQueue();
     add_process_to_ready_queue(processInfo.pid, processInfo.value);
 
     if (fork() == 0) {
         schedule();
     }
 
-    // SimpleShell executable files
 
     return 0;
 }
