@@ -36,7 +36,7 @@ void load_and_run_elf(char **exe) {
         exit(1);
     }
 
-    if (read(fd, phdr, ehdr->e_phnum * sizeof(Elf32_Phdr)) != p_num * sizeof(Elf32_Phdr)) {
+    if (read(fd, phdr, ehdr->e_phnum * sizeof(Elf32_Phdr)) != ehdr->e_phnum * sizeof(Elf32_Phdr)) {
       fprintf(stderr, "Error reading program headers\n");
       free(ehdr);
       free(phdr);
