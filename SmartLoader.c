@@ -11,6 +11,12 @@ void loader_cleanup() {
     
 }
 
+void my_handler(){ //function to handle SIGSEV signal
+    printf("Segmentation fault\n");
+    loader_cleanup();
+    exit(0);
+}
+
 void load_and_run_elf(char **exe) {
     fd = open(exe, O_RDONLY);
     if (fd == -1) {
