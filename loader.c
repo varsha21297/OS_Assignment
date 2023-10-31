@@ -68,22 +68,22 @@ void load_and_run_elf(char** exe) {
   }*/
   for (int i=0 ; i<p_num; i++ ) { 
     read(fd,phdr,p_num); //reading the program header table
-      unsigned int type = phdr->p_type;
-      if (type==PT_LOAD) { 
-        if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
-          address= phdr->p_vaddr;
-          offset= phdr->p_offset;
-          //printf("%x\n",address);
-          break;
-            //found segment 
-        }
+    unsigned int type = phdr->p_type;
+    if (type==PT_LOAD) { 
+      if ((entry_point >= phdr->p_vaddr) && (entry_point <= phdr->p_vaddr + phdr->p_memsz)) {
+        address= phdr->p_vaddr;
+        offset= phdr->p_offset;
+        //printf("%x\n",address);
+        break;
+          //found segment 
       }
-    } 
+    }
+  } 
      
 
   void *virtual_mem= mmap(NULL, phdr->p_memsz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS|MAP_PRIVATE, -1 , 0);
 
-  void* actual= ehdr->e_entry-(address+offset);
+  void* actual= (void*) ehdr->e_entry-(address+offset);
 
   //copy the segment of pt load
   lseek(fd, p_off, SEEK_SET); 
