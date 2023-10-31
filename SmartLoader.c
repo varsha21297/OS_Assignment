@@ -91,7 +91,7 @@ void load_and_run_elf(char **exe) {
     }
 
     // Allocate memory for the entry point segment
-    void *virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void *virtual_mem = mmap(NULL, phdr->p_memsz, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (virtual_mem == MAP_FAILED) {
         perror("Error allocating memory for the entry point segment");
