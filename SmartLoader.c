@@ -101,7 +101,7 @@ void load_and_run_elf(char **exe) {
         exit(1);
     }
 
-    void *actual = (void *)((char *)ehdr + entry_point - (address + offset));
+    void *actual = (void *)((char *)virtual_mem + entry_point - (address + offset));
 
     // Copy the segment of PT_LOAD
     if (lseek(fd, offset, SEEK_SET) == -1) {
