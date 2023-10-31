@@ -37,11 +37,11 @@ void load_and_run_elf(char **exe) {
     }
 
     if (read(fd, phdr, p_num * sizeof(Elf32_Phdr)) != p_num * sizeof(Elf32_Phdr)) {
-    fprintf(stderr, "Error reading program headers\n");
-    free(ehdr);
-    free(phdr);
-    close(fd);
-    exit(1);
+      fprintf(stderr, "Error reading program headers\n");
+      free(ehdr);
+      free(phdr);
+      close(fd);
+      exit(1);
     }
 
     // Calculate the offset of the program headers
