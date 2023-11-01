@@ -2,22 +2,20 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <unistd.h>
 
 Elf32_Ehdr *ehdr;
 Elf32_Phdr *phdr;
 int fd;
-void *virtual_mem = NULL;  // Initialize virtual_mem to NULL
+void *virtual_mem;
 
 void loader_cleanup() {
     free(ehdr);
+    free(phdr);
     close(fd);
-    if (virtual_mem != NULL && virtual_mem != MAP_FAILED) {
+    if (virtual_mem != MAP_FAILED) {
         munmap(virtual_mem, phdr->p_memsz);
     }
 }
@@ -37,6 +35,10 @@ void my_handler(int sig, siginfo_t *info, void *context) {
                     loader_cleanup();
                     exit(1);
                 }
+                memcpy(virtual_mem, (void *)(ehdr->e_entry), calc_mem);
+                int (*func)() = virtual_mem;
+                int result = func();
+                printf("User _start return value = %d\n", result);
                 return;
             }
         }
@@ -44,13 +46,12 @@ void my_handler(int sig, siginfo_t *info, void *context) {
 }
 
 void load_and_run_elf(char **exe) {
-    fd = open(exe, O_RDONLY);
+    fd = open(exe[1], O_RDONLY);
     if (fd == -1) {
         perror("Error opening file");
         return;
     }
 
-    // Read ELF header
     ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
     if (ehdr == NULL) {
         perror("Error allocating memory for ELF header");
@@ -77,10 +78,12 @@ void load_and_run_elf(char **exe) {
 
     lseek(fd, p_off, SEEK_SET);
 
-    void *actual = (void *)ehdr->e_entry;
+    void *actual = ehdr->e_entry;
 
     typedef int (*StartFunc)();
     StartFunc _start = (StartFunc)actual;
+
+    virtual_mem = NULL;
 
     if (signal(SIGSEGV, my_handler) == SIG_ERR) {
         perror("Error handling SIGSEGV");
@@ -89,7 +92,6 @@ void load_and_run_elf(char **exe) {
     }
 
     int result = _start();
-
     printf("User _start return value = %d\n", result);
 }
 
@@ -98,7 +100,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <ELF Executable>\n", argv[0]);
         exit(1);
     }
-    load_and_run_elf(argv[1]);
+    load_and_run_elf(argv);
     loader_cleanup();
     return 0;
 }
