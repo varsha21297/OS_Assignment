@@ -6,6 +6,7 @@
 Elf32_Ehdr *ehdr;
 Elf32_Phdr *phdr;
 int fd;
+void *virtual_mem;
 
 void loader_cleanup() {
     free(ehdr);
