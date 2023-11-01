@@ -102,7 +102,7 @@ void load_and_run_elf(char **exe) {
     printf("User _start return value = %d\n", result);
 
     // Cleanup whatever opened
-    munmap(virtual_mem, phdr->p_memsz);
+    //munmap(virtual_mem, phdr->p_memsz);
 }
 
 int main(int argc, char **argv) {
