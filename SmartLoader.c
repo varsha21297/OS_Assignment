@@ -53,7 +53,7 @@ void load_and_run_elf(char **exe) {
         return;
     }
 
-    ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr);
+    ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
     if (ehdr == NULL) {
         perror("Error allocating memory for ELF header");
         close(fd);
