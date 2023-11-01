@@ -63,7 +63,7 @@ void load_and_run_elf(char **exe) {
     unsigned int address;
     int offset;
     
-    for (int i = 0; i < p_num; i++) {
+    /*for (int i = 0; i < p_num; i++) {
     read(fd, phdr, p_size);
     unsigned int type = phdr -> p_type;
         if (type==PT_LOAD) { 
@@ -88,10 +88,10 @@ void load_and_run_elf(char **exe) {
 
     // Copy segment content
     lseek(fd, phdr->p_offset, SEEK_SET);
-    read(fd, virtual_mem, phdr->p_filesz);
+    read(fd, virtual_mem, phdr->p_filesz);*/
 
     // Calculate entrypoint address within the loaded segment
-    void *actual = virtual_mem + (ehdr->e_entry - phdr->p_vaddr);
+    void *actual = /*virtual_mem +*/ (ehdr->e_entry /*- phdr->p_vaddr*/);
 
     // Define function pointer type for _start and use it to typecast function pointer properly
     typedef int (*StartFunc)();
