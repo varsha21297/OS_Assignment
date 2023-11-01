@@ -5,6 +5,7 @@
 
 Elf32_Ehdr *ehdr;
 Elf32_Phdr *phdr;
+Elf32_Phdr *segment
 int fd;
 void *virtual_mem;
 
@@ -23,7 +24,7 @@ void my_handler(int sig, siginfo_t *info, void *context) {
         void *faulty = info->si_addr;
 
         for (int i = 0; i < ehdr->e_phnum; i++) {
-            Elf32_Phdr *segment = (Elf32_Phdr *)((char *)ehdr + ehdr->e_phoff + i * ehdr->e_phentsize);
+            segment = (Elf32_Phdr *)((char *)ehdr + ehdr->e_phoff + i * ehdr->e_phentsize);
             if (faulty >= (void *)segment->p_vaddr && faulty < (void *)(segment->p_vaddr + segment->p_memsz)) {
                 size_t calc_mem = ((segment->p_memsz + 4096 - 1) / 4096) * 4096;
                 virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -45,7 +46,6 @@ void load_and_run_elf(char **exe) {
         return;
     }
 
-    // Read ELF header
     ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
     if (ehdr == NULL) {
         perror("Error allocating memory for ELF header");
@@ -59,16 +59,10 @@ void load_and_run_elf(char **exe) {
         return;
     }
 
-    // Calculate the offset of the program headers
     unsigned int p_off = ehdr->e_phoff;
-
-    // Calculate the number of program headers
     unsigned short p_num = ehdr->e_phnum;
-
-    // Calculate the size of each program header
     unsigned short p_size = ehdr->e_phentsize;
 
-    // Find the PT_LOAD segment with entry point
     phdr = (Elf32_Phdr *)malloc(p_size);
     if (phdr == NULL) {
         perror("Error allocating memory for program header");
@@ -83,7 +77,7 @@ void load_and_run_elf(char **exe) {
     typedef int (*StartFunc)();
     StartFunc _start = (StartFunc)actual;
 
-    virtual_mem = NULL;  // Initialize virtual_mem to NULL
+    virtual_mem = NULL;
 
     if (signal(SIGSEGV, my_handler) == SIG_ERR) {
         perror("Error handling SIGSEGV");
