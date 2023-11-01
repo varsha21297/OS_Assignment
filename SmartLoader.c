@@ -14,8 +14,10 @@ void loader_cleanup() {
     
 }
 
-void my_handler(int sig){ //function to handle SIGSEV signal
-
+void my_handler(int sig, siginfo_t *info, void *context){ //function to handle SIGSEV signal
+    if (sig == SIGSEGV) {
+        printf("Segmentation fault caught!\n");
+    }
 }
 
 void load_and_run_elf(char **exe) {
@@ -73,30 +75,31 @@ void load_and_run_elf(char **exe) {
     // Call the "_start" method and print the value returned from "_start"
     int result = _start();
     if (signal(SIGSEGV, my_handler) == SIG_ERR) { //handle SIGSEGV signal
-        siginfo_t *info;
-        void *faulty= info->si_addr;
-        lseek(fd, p_off, SEEK_SET);
-        for (int i = 0; i < p_num; i++) {
-            read(fd, phdr, p_size);
-            if ((faulty >= phdr->p_vaddr) && (faulty <= phdr->p_vaddr + phdr->p_memsz)) {
-                size_t calc_mem= ((phdr->p_memsz +4096-1)/4096)*4096;
-                void *virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-                if (virtual_mem == MAP_FAILED) {
-                    perror("Error allocating memory for segment");
-                    loader_cleanup();
-                    return;
-                }
-                break;
-                //found segment 
-            }
-
-        int result = _start();
-        printf("User _start return value = %d\n", result);
-        // Cleanup whatever opened
-        munmap(virtual_mem, phdr->p_memsz);
-        
+        perror("Error handling SIGSEGV");
+        loader_cleanup();
+        return;
     }
-
+    siginfo_t *info;
+    void *faulty= info->si_addr;
+    lseek(fd, p_off, SEEK_SET);
+    for (int i = 0; i < p_num; i++) {
+        read(fd, phdr, p_size);
+        if ((faulty >= phdr->p_vaddr) && (faulty <= phdr->p_vaddr + phdr->p_memsz)) {
+            size_t calc_mem= ((phdr->p_memsz +4096-1)/4096)*4096;
+            void *virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            int result = _start();
+            printf("User _start return value = %d\n", result);
+            // Cleanup whatever opened
+            munmap(virtual_mem, phdr->p_memsz);
+            if (virtual_mem == MAP_FAILED) {
+                perror("Error allocating memory for segment");
+                loader_cleanup();
+                return;
+            }
+            break;
+            //found segment 
+        }
+        
     }
 }
 
