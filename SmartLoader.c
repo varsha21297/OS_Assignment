@@ -9,15 +9,11 @@
 Elf32_Ehdr *ehdr;
 Elf32_Phdr *phdr;
 int fd;
-void *virtual_mem;
 
 void loader_cleanup() {
     free(ehdr);
     free(phdr);
     close(fd);
-    if (virtual_mem != MAP_FAILED) {
-        munmap(virtual_mem, phdr->p_memsz);
-    }
 }
 
 void my_handler(int sig, siginfo_t *info, void *context) {
@@ -29,16 +25,21 @@ void my_handler(int sig, siginfo_t *info, void *context) {
             Elf32_Phdr *segment = (Elf32_Phdr *)((char *)ehdr + ehdr->e_phoff + i * ehdr->e_phentsize);
             if (faulty >= (void *)segment->p_vaddr && faulty < (void *)(segment->p_vaddr + segment->p_memsz)) {
                 size_t calc_mem = ((segment->p_memsz + 4096 - 1) / 4096) * 4096;
-                virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                void *virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
                 if (virtual_mem == MAP_FAILED) {
                     perror("Error allocating memory for segment");
                     loader_cleanup();
                     exit(1);
                 }
-                memcpy(virtual_mem, (void *)(ehdr->e_entry), calc_mem);
+                memcpy(virtual_mem, (void *)segment->p_offset, segment->p_filesz);
+
+                // Cast the virtual_mem as a function pointer and execute it
                 int (*func)() = virtual_mem;
                 int result = func();
                 printf("User _start return value = %d\n", result);
+
+                // Cleanup the memory
+                munmap(virtual_mem, calc_mem);
                 return;
             }
         }
@@ -52,7 +53,7 @@ void load_and_run_elf(char **exe) {
         return;
     }
 
-    ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
+    ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr);
     if (ehdr == NULL) {
         perror("Error allocating memory for ELF header");
         close(fd);
@@ -65,33 +66,18 @@ void load_and_run_elf(char **exe) {
         return;
     }
 
-    // Calculate the offset of the program headers
-    unsigned int p_off = ehdr->e_phoff;
+    unsigned int entry_point = ehdr->e_entry;
 
-    // Find the PT_LOAD segment with entry point
-    phdr = (Elf32_Phdr *)malloc(ehdr->e_phentsize);
-    if (phdr == NULL) {
-        perror("Error allocating memory for program header");
-        loader_cleanup();
-        return;
-    }
+    // Set up a signal handler for SIGSEGV
+    struct sigaction sa;
+    sa.sa_sigaction = my_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGSEGV, &sa, NULL);
 
-    lseek(fd, p_off, SEEK_SET);
-
-    void *actual = ehdr->e_entry;
-
-    typedef int (*StartFunc)();
-    StartFunc _start = (StartFunc)actual;
-
-    virtual_mem = NULL;
-
-    if (signal(SIGSEGV, my_handler) == SIG_ERR) {
-        perror("Error handling SIGSEGV");
-        loader_cleanup();
-        return;
-    }
-
-    int result = _start();
+    // Call the entry point function
+    int (*func)() = (int (*)())entry_point;
+    int result = func();
     printf("User _start return value = %d\n", result);
 }
 
