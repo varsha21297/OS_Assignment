@@ -9,8 +9,10 @@ int fd;
 void* virtual_mem;
 int total_page_faults = 0;
 int total_page_allocations = 0;
-size_t total_internal_fragmentation = 0;
-size_t page_size = 4 * 1024;
+long total_internal_fragmentation = 0;
+unsigned char *allocated_pages = NULL; // Track page allocations
+unsigned long total_allocated_memory = 0;
+unsigned long total_memory_allocated = 0;
 
 void loader_cleanup() {
         free(ehdr);
@@ -23,41 +25,12 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
     if (sig == SIGSEGV) {
         printf("Segmentation fault caught!\n");
         void *faulty= info->si_addr;
+        unsigned int page_size = getpagesize();
 
-    // // Calculate the starting address of the faulting page
-    // unsigned int page_start = (unsigned int)ehdr->e_entry & ~(page_size - 1);
+    // Calculate the starting address of the faulting page
+    unsigned int page_start = (unsigned int)ehdr->e_entry & ~(page_size - 1);
 
-    // // Calculate the size of the page, rounding up to the nearest page_size
-    // size_t page_memory_size = (segment_size + page_size - 1) & ~(page_size - 1);
-
-    // // Allocate memory for the entire page using mmap
-    // void *page = mmap((void *)page_start, page_memory_size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-
-    // if (page == MAP_FAILED) {
-    //     perror("Error mapping memory for page fault");
-    //     loader_cleanup();
-    //     exit(1);
-    // }
-
-    // total_page_faults++;
-    // total_page_allocations++;
-
-    // Calculate internal fragmentation for this page allocation
-    unsigned long allocated_size = page_size;
-    if (page_size > allocated_size)
-    {
-        total_internal_fragmentation += (page_size - allocated_size) / 1024;
-    }
-
-
-        // ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
-        // if (ehdr == NULL) {
-        //     perror("Error allocating memory for ELF header");
-        //     close(fd);
-        //     return;
-        // }
-        
-        // read(fd, ehdr, sizeof(Elf32_Ehdr));
+    if (allocated_pages[(uintptr_t)page_start / page_size] == 0) { 
 
         // Calculate the offset of the program headers
         unsigned int p_off = ehdr->e_phoff;
@@ -68,17 +41,16 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
         // Calculate the size of each program header
         unsigned short p_size = ehdr->e_phentsize;
 
-        unsigned int entry_point = ehdr->e_entry;
 
         // Calculate the segment offset
-        lseek(fd, p_off, SEEK_SET);
         for (int i = 0; i < p_num; i++) {
+            lseek(fd, ehdr->e_phoff + i * ehdr->e_phentsize, SEEK_SET);
             read(fd, phdr, p_size);
-            if ((faulty >= phdr->p_vaddr) && (faulty <= phdr->p_vaddr + phdr->p_memsz)) {
+            if ((page_start >= phdr->p_vaddr) && (page_start <= phdr->p_vaddr + phdr->p_memsz)) {
 
-                size_t calc_mem= ((phdr->p_memsz +4096-1)/4096)*4096;
+                size_t calc_mem= ((phdr->p_memsz +page_size-1) / page_size) * page_size;
                 
-                void *virtual_mem = mmap((void *)phdr->p_vaddr, calc_mem, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+                void *virtual_mem = mmap(page_start, calc_mem, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
                 // int result = _start();
                 // printf("User _start return value = %d\n", result);
                 // // Cleanup whatever opened
@@ -86,9 +58,11 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
                 if (virtual_mem == MAP_FAILED) {
                     perror("Error allocating memory for segment");
                     exit(1);
-                    loader_cleanup();
-                    return;
+                    //loader_cleanup();
                 }
+
+                // Track allocated memory
+                total_allocated_memory += map_size;
 
                  // Read the segment content
                 lseek(fd, phdr->p_offset, SEEK_SET);
@@ -97,9 +71,11 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
                 //found segment 
                 total_page_faults++;
                 total_page_allocations++;
+                allocated_pages[(uintptr_t)page_start / page_size] = 1;
 
                 return;
             }       
+        }
     }
     }
 }
@@ -148,7 +124,7 @@ void load_and_run_elf(char **exe) {
     // Install segmentation fault handler
     struct sigaction sa;
     sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = segv_handler;
+    sa.sa_sigaction = my_handler;
     sigaction(SIGSEGV, &sa, NULL);
 
 
