@@ -43,7 +43,18 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
             read(fd, phdr, p_size);
             if ((faulty >= phdr->p_vaddr) && (faulty <= phdr->p_vaddr + phdr->p_memsz)) {
                 size_t calc_mem= ((phdr->p_memsz +4096-1)/4096)*4096;
-                void *virtual_mem = mmap(NULL, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                virtual_mem = mmap((void *)phdr->p_vaddr, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                ssize_t read_bytes = read(fd, virtual_mem, phdr->p_filesz);
+                if (read_bytes == -1) {
+                    perror("Error reading segment");
+                    loader_cleanup();
+                    return;
+                }
+                if (lseek(fd, phdr->p_offset, SEEK_SET) == -1) {
+                    perror("Error seeking to segment offset");
+                    loader_cleanup();
+                    return;
+                }
                 int result = _start();
                 printf("User _start return value = %d\n", result);
                 // Cleanup whatever opened
@@ -114,12 +125,13 @@ void load_and_run_elf(char **exe) {
     StartFunc _start = (StartFunc)actual;
 
     // Call the "_start" method and print the value returned from "_start"
-    int result = _start();
+    //int result = _start();
     if (signal(SIGSEGV, my_handler) == SIG_ERR) { //handle SIGSEGV signal
         perror("Error handling SIGSEGV");
         loader_cleanup();
         return;
     }
+    int result=_start();
     printf("User _start return value = %d\n", result);
 }
 
