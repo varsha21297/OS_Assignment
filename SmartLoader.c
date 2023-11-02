@@ -44,6 +44,11 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
             if ((faulty >= phdr->p_vaddr) && (faulty <= phdr->p_vaddr + phdr->p_memsz)) {
                 size_t calc_mem= ((phdr->p_memsz +4096-1)/4096)*4096;
                 virtual_mem = mmap((void *)phdr->p_vaddr, calc_mem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                if (virtual_mem == MAP_FAILED) {
+                    perror("Error allocating memory for segment");
+                    loader_cleanup();
+                    return;
+                }
                 ssize_t read_bytes = read(fd, virtual_mem, phdr->p_filesz);
                 if (read_bytes == -1) {
                     perror("Error reading segment");
@@ -119,11 +124,6 @@ void load_and_run_elf(char **exe) {
     }
     // Cleanup whatever opened
     munmap(virtual_mem, phdr->p_memsz);
-    if (virtual_mem == MAP_FAILED) {
-        perror("Error allocating memory for segment");
-        loader_cleanup();
-        return;
-    }
     int result=_start();
     printf("User _start return value = %d\n", result);
 }
