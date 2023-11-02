@@ -50,20 +50,6 @@ void my_handler(int sig, siginfo_t *info, void *context){ //function to handle S
                     loader_cleanup();
                     return;
                 }
-                if (lseek(fd, phdr->p_offset, SEEK_SET) == -1) {
-                    perror("Error seeking to segment offset");
-                    loader_cleanup();
-                    return;
-                }
-                int result = _start();
-                printf("User _start return value = %d\n", result);
-                // Cleanup whatever opened
-                munmap(virtual_mem, phdr->p_memsz);
-                if (virtual_mem == MAP_FAILED) {
-                    perror("Error allocating memory for segment");
-                    loader_cleanup();
-                    return;
-                }
                 break;
                 //found segment 
             }
@@ -128,6 +114,13 @@ void load_and_run_elf(char **exe) {
     //int result = _start();
     if (signal(SIGSEGV, my_handler) == SIG_ERR) { //handle SIGSEGV signal
         perror("Error handling SIGSEGV");
+        loader_cleanup();
+        return;
+    }
+    // Cleanup whatever opened
+    munmap(virtual_mem, phdr->p_memsz);
+    if (virtual_mem == MAP_FAILED) {
+        perror("Error allocating memory for segment");
         loader_cleanup();
         return;
     }
