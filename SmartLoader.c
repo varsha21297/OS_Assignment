@@ -1,47 +1,38 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <elf.h>
-#include <signal.h>
-#include <string.h>
+#include "loader.h"
+#include <signal.h>;
+#include <sys/stat.h>;
 
+struct sigaction sa;
+
+// Global variables to store elf header and program header
 Elf32_Ehdr *ehdr;
-Elf32_Phdr *phdr; 
-
+Elf32_Phdr phdr;
 int fd;
-int page_faults = 0;
-int page_allocations = 0;
-long internal_fragmentation = 0;
-unsigned char *allocated_pages = NULL; // Track page allocations
-unsigned long total_allocated_memory = 0;
-unsigned long total_memory_allocated = 0;
 
+// Initializing the variables to keep track of it.
+int faultPages_ptr = 0;
+int allocPages_ptr = 0;
+long fragmnt_ptr = 0;
+unsigned char *allocated_pages = NULL; // Track page allocations
+unsigned long allocMem_ptr = 0;
+unsigned long memory_ptr = 0;
+
+// Release memory & other cleanups
 void loader_cleanup() {
-    if (allocated_pages != NULL) {
-        free(allocated_pages);
-    }
-    if (ehdr != NULL) {
-        free(ehdr);
-    }
-    if (fd != -1) {
-        close(fd);
-    }
+    free(ehdr);
+    //free(&phdr);
+    close(fd);
 }
 
-void my_handler(int sig, siginfo_t *info, void *context) {
+void my_handler(int sig, siginfo_t *info, void *context){
+    // handle segmentation fault
     if (sig == SIGSEGV) {
-        printf("Segmentation fault caught!\n");
         void *faulty = info->si_addr;
-        unsigned int page_size = getpagesize();
-        void *page_start = (void *)((uintptr_t)fault_addr & ~(page_size - 1));
-
+        unsigned int page_size = 4096
+        // printf("Page size %d\n",page_size);
+        void *page_start = (void *)((uintptr_t)faulty & ~(page_size - 1));
+        // printf("fault address %p\n", faulty);
         if (allocated_pages[(uintptr_t)page_start / page_size] == 0) {
-            // This is a page fault
-
             // Calculate the offset of the program headers
             unsigned int p_off = ehdr->e_phoff;
 
@@ -51,42 +42,68 @@ void my_handler(int sig, siginfo_t *info, void *context) {
             // Calculate the size of each program header
             unsigned short p_size = ehdr->e_phentsize;
 
-            // Calculate the segment offset
-            for (int i = 0; i < p_num; i++) {
+            int i = 0; // Initialize the loop counter
+            while (i < p_num) {
+                // Calculate the offset for the i-th Program Header entry
                 lseek(fd, p_off + i * p_size, SEEK_SET);
-                read(fd, phdr, p_size);
+                read(fd, &phdr, p_size);
 
-                if (phdr->p_type == PT_LOAD &&
-                    (uintptr_t)page_start >= phdr->p_vaddr &&
-                    (uintptr_t)page_start < phdr->p_vaddr + phdr->p_memsz) {
+                if (phdr.p_type == PT_LOAD &&
+                    page_start >= phdr.p_vaddr &&
+                    page_start < phdr.p_vaddr + phdr.p_memsz) {
+                    printf("p starting address %x\n", phdr.p_vaddr);
 
-                
-                    size_t calc_mem = ((phdr->p_memsz + page_size - 1) / page_size) * page_size;
+                    // Calculate the size to mmap (round up to the page size)
+                    int calc_mem = ((phdr.p_memsz + page_size - 1) / page_size) * page_size;
+                    faultPages_ptr += calc_mem / 4096;
+
+                    printf("segment size %d\n", phdr.p_memsz);
+                    printf("map size %d\n", calc_mem);
+
                     void *virtual_mem = mmap(page_start, calc_mem, PROT_READ | PROT_WRITE | PROT_EXEC,
-                                                MAP_PRIVATE | MAP_ANONYMOUS , -1, 0);
+                                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
                     if (virtual_mem == MAP_FAILED) {
                         perror("Error mapping memory for segment");
                         exit(1);
                     }
+                    read(fd, virtual_mem, phdr.p_filesz);
+                    int fragmentation = calc_mem - phdr.p_memsz;
+                    fragmnt_ptr += fragmentation;
+                    printf("total internal fragmentation %ld\n", fragmnt_ptr);
 
                     // Track allocated memory
-                    total_allocated_memory += calc_size;
+                    allocMem_ptr += calc_mem;
+
+                    // Update the memory_ptr
+                    memory_ptr += fragmentation;
+                    printf("Result allocMem_ptr: %ld\n", allocMem_ptr);
 
                     // Copy segment contents
-                    lseek(fd, phdr->p_offset, SEEK_SET);
-                    read(fd, segment_memory, phdr->p_filesz);
+                    lseek(fd, phdr.p_offset, SEEK_SET);
 
-                    page_faults++;
-                    page_allocations++;
+                    if (read(fd, virtual_mem, phdr.p_filesz) == -1) {
+                        perror("error read");
+                        exit(1);
+                    }
+
+                    allocPages_ptr++;
                     allocated_pages[(uintptr_t)page_start / page_size] = 1;
+                    printf("Result allocated_pages: %hhn\n", allocated_pages);
+                    printf("page allocations: %d\n", allocPages_ptr);
+                    printf("..............................................\n");
+
+                    //munmap(virtual_mem,calc_mem);
                 }
+
+                // Increment the loop counter
+                i++;
             }
         }
     }
 }
 
-void load_and_run_elf(char *exe) {
+void load_and_run_elf(char **exe) {
     fd = open(exe, O_RDONLY);
     if (fd == -1) {
         perror("Error opening file");
@@ -95,7 +112,7 @@ void load_and_run_elf(char *exe) {
 
     ehdr = (Elf32_Ehdr *)malloc(sizeof(Elf32_Ehdr));
     if (ehdr == NULL) {
-        perror("Error allocating memory for ELF header");
+        perror("Failed to allocate memory for ELF header");
         loader_cleanup();
         exit(1);
     }
@@ -117,19 +134,29 @@ void load_and_run_elf(char *exe) {
 
     // Calculate the maximum address space size
     unsigned int max_address = 0;
-    for (int i = 0; i < p_num; i++) {
-        lseek(fd, poff + i * p_size, SEEK_SET);
-        read(fd, phdr, p_size);
 
-        if (phdr->p_type == PT_LOAD) {
-            if (phdr->p_vaddr + phdr->p_memsz > max_address) {
-                max_address = phdr->p_vaddr + phdr->p_memsz;
+    int i = 0;
+    while (i < p_num) {
+        // Calculate the offset for the i-th Program Header entry
+        lseek(fd, p_off + i * p_size, SEEK_SET);
+
+        // Read the Program Header entry into phdr
+        if (read(fd, &phdr, p_size) == -1) {
+            perror("error reading");
+            exit(1);
+        }
+
+        if (phdr.p_type == PT_LOAD) {
+            if (phdr.p_vaddr + phdr.p_memsz > max_address) {
+                max_address = phdr.p_vaddr + phdr.p_memsz;
             }
         }
+
+        i++;
     }
 
     // Calculate the number of pages required for the address space
-    size_t page_count = (size_t)(max_address / getpagesize()) + 1;
+    int page_count = (int)(max_address / getpagesize()) + 1;
 
     // Allocate memory for tracking allocated pages
     allocated_pages = (unsigned char *)calloc(page_count, sizeof(unsigned char));
@@ -139,30 +166,24 @@ void load_and_run_elf(char *exe) {
         exit(1);
     }
 
-    struct sigaction sa;
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = my_handler;
     sigaction(SIGSEGV, &sa, NULL);
 
-    void *entrypoint = (void *)(ehdr->e_entry);
+    void *actual = (void *)(ehdr->e_entry);
 
-    typedef int (*StartFunc)();
-    StartFunc _start = (StartFunc)entrypoint;
+    // Define function pointer type for _start and use it to typecast function pointer properly
+    typedef int (*Start_Func)();
+    Start_Func _start = (Start_Func)actual;
 
     int result = _start();
 
-    // Calculate internal fragmentation based on allocated and used memory
-    internal_fragmentation = total_allocated_memory - total_memory_allocated;
-
     loader_cleanup();
-
-    printf("User _start return value = %d\n", result);
-    printf("Page Faults: %d\n", page_faults);
-    printf("Page Allocations: %d\n", page_allocations);
-    printf("total allocated memory: %lu\n", total_allocated_memory);
-    printf("total memory allocated: %lu\n",total_memory_allocated);
-    printf("Internal Fragmentation: %.2f KB\n", (float)internal_fragmentation / 1024.0);
-} 
+    printf("Result from _start: %d\n", result);
+    printf("Page Faults: %d\n", faultPages_ptr);
+    printf("Page Allocations: %d\n", allocPages_ptr);
+    printf("Internal Fragmentation: %.2f KB\n", (float)fragmnt_ptr / 1024);
+}
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -171,6 +192,6 @@ int main(int argc, char **argv) {
     }
 
     load_and_run_elf(argv[1]);
-
+    loader_cleanup();
     return 0;
 }
