@@ -51,14 +51,14 @@ void my_handler(int sig, siginfo_t *info, void *context){
                 if (phdr.p_type == PT_LOAD &&
                     page_start >= phdr.p_vaddr &&
                     page_start < phdr.p_vaddr + phdr.p_memsz) {
-                    printf("p starting address %x\n", phdr.p_vaddr);
+                    //printf("p starting address %x\n", phdr.p_vaddr);
 
                     // Calculate the size to mmap (round up to the page size)
                     int calc_mem = ((phdr.p_memsz + page_size - 1) / page_size) * page_size;
                     faultPages_ptr += calc_mem / 4096;
 
-                    printf("segment size %d\n", phdr.p_memsz);
-                    printf("map size %d\n", calc_mem);
+                    //printf("segment size %d\n", phdr.p_memsz);
+                    //printf("map size %d\n", calc_mem);
 
                     void *virtual_mem = mmap(page_start, calc_mem, PROT_READ | PROT_WRITE | PROT_EXEC,
                                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -70,14 +70,14 @@ void my_handler(int sig, siginfo_t *info, void *context){
                     read(fd, virtual_mem, phdr.p_filesz);
                     int fragmentation = calc_mem - phdr.p_memsz;
                     fragmnt_ptr += fragmentation;
-                    printf("total internal fragmentation %ld\n", fragmnt_ptr);
+                    //printf("total internal fragmentation %ld\n", fragmnt_ptr);
 
                     // Track allocated memory
                     allocMem_ptr += calc_mem;
 
                     // Update the memory_ptr
                     memory_ptr += fragmentation;
-                    printf("Result allocMem_ptr: %ld\n", allocMem_ptr);
+                    //printf("Result allocMem_ptr: %ld\n", allocMem_ptr);
 
                     // Copy segment contents
                     lseek(fd, phdr.p_offset, SEEK_SET);
@@ -89,9 +89,8 @@ void my_handler(int sig, siginfo_t *info, void *context){
 
                     allocPages_ptr++;
                     allocated_pages[(uintptr_t)page_start / page_size] = 1;
-                    printf("Result allocated_pages: %hhn\n", allocated_pages);
-                    printf("page allocations: %d\n", allocPages_ptr);
-                    printf("..............................................\n");
+                    // printf("Result allocated_pages: %hhn\n", allocated_pages);
+                    // printf("page allocations: %d\n", allocPages_ptr);
 
                     //munmap(virtual_mem,calc_mem);
                 }
