@@ -1,6 +1,6 @@
 #include "loader.h"
-#include <signal.h>;
-#include <sys/stat.h>;
+#include <signal.h>
+#include <sys/stat.h>
 
 struct sigaction sa;
 
