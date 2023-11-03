@@ -28,7 +28,7 @@ void my_handler(int sig, siginfo_t *info, void *context){
     // handle segmentation fault
     if (sig == SIGSEGV) {
         void *faulty = info->si_addr;
-        unsigned int page_size = 4096
+        unsigned int page_size = 4096;
         // printf("Page size %d\n",page_size);
         void *page_start = (void *)((uintptr_t)faulty & ~(page_size - 1));
         // printf("fault address %p\n", faulty);
