@@ -22,7 +22,7 @@ void *thread_func(void *arg) {
         args->lambda(i);
     }
 
-    pthread_exit(NULL);
+    return NULL;
 }
 
 void demonstration(std::function<void(int)> &&lambda) {
