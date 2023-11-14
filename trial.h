@@ -1,48 +1,76 @@
 #include <iostream>
 #include <list>
 #include <functional>
-#include <stdlib.h>
-#include <cstring>
+#include <pthread.h>
 
-int user_main(int argc, char **argv);
+const int NTHREADS = 4;  // Adjust the number of threads as needed
+const int SIZE = 100;    // Adjust the size of your task
 
-/* Demonstration on how to pass lambda as parameter.
- * "&&" means r-value reference. You may read about it online.
- */
-void demonstration(std::function<void()> && lambda) {
-  lambda();
+typedef struct {
+    int low;
+    int high;
+    int id;
+    int numThreads;
+    std::function<void(int)> lambda;  // Use std::function for C++ lambda
+} thread_args;
+
+void *thread_func(void *arg) {
+    thread_args *args = (thread_args *)arg;
+
+    // Your logic for dividing the loop range and running the lambda in parallel goes here
+    for (int i = args->low; i < args->high; ++i) {
+        args->lambda(i);
+    }
+
+    pthread_exit(NULL);
+}
+
+void demonstration(std::function<void(int)> &&lambda) {
+    // You can use this function to demonstrate the lambda functionality
+    lambda(0);  // Pass a sample parameter to the lambda
+}
+
+int user_main(int argc, char **argv) {
+    pthread_t tid[NTHREADS];
+    thread_args args[NTHREADS];
+    int chunk = SIZE / NTHREADS;
+
+    for (int i = 0; i < NTHREADS; i++) {
+        args[i].low = i * chunk;
+        args[i].high = (i + 1) * chunk;
+        args[i].numThreads = NTHREADS;
+        args[i].lambda = [](int i) {
+            // Your lambda functionality goes here
+            std::cout << "Processing element: " << i << std::endl;
+        };
+
+        pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
+    }
+
+    for (int i = 0; i < NTHREADS; i++) {
+        pthread_join(tid[i], NULL);
+    }
+
+    int x = 5, y = 1;
+
+    auto lambda1 = [x, &y](int) {
+        y = 5;
+        std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======" << std::endl;
+    };
+
+    demonstration(lambda1);
+
+    // Your user_main logic goes here
+
+    auto lambda2 = [](int) {
+        std::cout << "====== Hope you enjoyed CSE231(A) ======" << std::endl;
+    };
+
+    demonstration(lambda2);
+
+    return 0;
 }
 
 int main(int argc, char **argv) {
-  /* 
-   * Declaration of a sample C++ lambda function
-   * that captures variable 'x' by value and 'y'
-   * by reference. Global variables are by default
-   * captured by reference and are not to be supplied
-   * in the capture list. Only local variables must be 
-   * explicity captured if they are used inside lambda.
-   */
-  int x=5,y=1;
-  // Declaring a lambda expression that accepts void type parameter
-  auto /*name*/ lambda1 = /*capture list*/[/*by value*/ x, /*by reference*/ &y](void) {
-    /* Any changes to 'x' will throw compilation error as x is captured by value */
-    y = 5;
-    std::cout<<"====== Welcome to Assignment-"<<y<<" of the CSE231(A) ======\n";
-    /* you can have any number of statements inside this lambda body */
-  };
-  // Executing the lambda function
-  demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
-
-  int rc = user_main(argc, argv);
- 
-  auto /*name*/ lambda2 = [/*nothing captured*/]() {
-    std::cout<<"====== Hope you enjoyed CSE231(A) ======\n";
-    /* you can have any number of statements inside this lambda body */
-  };
-  demonstration(lambda2);
-  return rc;
+    return user_main(argc, argv);
 }
-
-#define main user_main
-
-
