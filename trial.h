@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
    */
   int x=5,y=1;
   // Declaring a lambda expression that accepts void type parameter
-  auto lambda1 = [x, &y](void) {
+  auto lambda1 = [x, &y]() {
         y = 5;
         std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======\n";
     };
