@@ -1,4 +1,4 @@
-#include "simple-multithreader.h"
+#include "trial.h"
 #include <assert.h>
 
 int main(int argc, char** argv) {
