@@ -41,6 +41,10 @@ void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numT
 
         pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
     }
+
+    for (int i = 0; i < numThreads; i++) {
+        pthread_join(tid[i], NULL);
+    }
 }
 
 void parallel_for(int low1, int high1, int low2, int high2, std::function<void(int, int)> &&lambda, int numThreads){
@@ -53,6 +57,7 @@ void parallel_for(int low1, int high1, int low2, int high2, std::function<void(i
 
 void demonstration(std::function<void(int)> &&lambda) {
     // You can use this function to demonstrate the lambda functionality
+
     lambda(0);  // Pass a sample parameter to the lambda
 }
 
