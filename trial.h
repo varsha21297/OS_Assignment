@@ -7,6 +7,7 @@
 
 const int SIZE = 100;    // Adjust the size of your task
 void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads);
+int user_main(int argc, char **argv);
 typedef struct {
     int low;
     int high;
@@ -55,26 +56,6 @@ void demonstration(std::function<void(int)> &&lambda) {
     lambda(0);  // Pass a sample parameter to the lambda
 }
 
-int user_main(int argc, char **argv) {
-    int x = 5, y = 1;
-
-    auto lambda1 = [x, &y](int) {
-        y = 5;
-        std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======" << std::endl;
-    };
-
-    demonstration(lambda1);
-
-    // Your user_main logic goes here
-
-    auto lambda2 = [](int) {
-        std::cout << "====== Hope you enjoyed CSE231(A) ======" << std::endl;
-    };
-
-    demonstration(lambda2);
-
-    return 0;
-}
 
 int main(int argc, char **argv) {
     /* 
