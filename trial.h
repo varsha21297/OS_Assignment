@@ -15,7 +15,13 @@ typedef struct {
     std::function<void(int)> lambda;
 } thread_args;
 
-void *thread_func(void *arg);
+void *thread_func(void *arg){
+    thread_args *args = (thread_args *)arg;
+    for (int i = args->low; i < args->high; i++) {
+        args->lambda(i);
+    }
+    return NULL;
+}
 
 void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads){
     pthread_t tid[numThreads];
