@@ -6,7 +6,7 @@
 
 
 const int SIZE = 100;    // Adjust the size of your task
-
+void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads);
 typedef struct {
     int low;
     int high;
