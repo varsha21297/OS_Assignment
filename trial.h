@@ -1,17 +1,17 @@
 #include <iostream>
 #include <list>
 #include <functional>
-#include <pthread.h>
+#include <stdlib.h>
+#include <cstring>
 
-const int NTHREADS = 4;  // Adjust the number of threads as needed
+
 const int SIZE = 100;    // Adjust the size of your task
 
 typedef struct {
     int low;
     int high;
     int id;
-    int numThreads;
-    std::function<void(int)> lambda;  // Use std::function for C++ lambda
+    std::function<void(int)> lambda;
 } thread_args;
 
 void *thread_func(void *arg) {
@@ -25,32 +25,37 @@ void *thread_func(void *arg) {
     return NULL;
 }
 
+void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads){
+    pthread_t tid[numThreads];
+    thread_args args[numThreads];
+    int chunk = SIZE / numThreads;
+    for (int i = 0; i < numThreads; i++) {
+        args[i].low = i * chunk;
+        if (i==numThreads-1) {
+            args[i].high = SIZE;
+        }
+        else {
+            args[i].high = (i + 1) * chunk;
+        }
+
+        pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
+    }
+}
+
+void parallel_for(int low1, int high1, int low2, int high2, std::function<void(int, int)> &&lambda, int numThreads){
+    pthread_t tid[numThreads];
+    thread_args args[numThreads];
+    int chunk = SIZE / numThreads;
+    }
+
+
+
 void demonstration(std::function<void(int)> &&lambda) {
     // You can use this function to demonstrate the lambda functionality
     lambda(0);  // Pass a sample parameter to the lambda
 }
 
 int user_main(int argc, char **argv) {
-    pthread_t tid[NTHREADS];
-    thread_args args[NTHREADS];
-    int chunk = SIZE / NTHREADS;
-
-    for (int i = 0; i < NTHREADS; i++) {
-        args[i].low = i * chunk;
-        args[i].high = (i + 1) * chunk;
-        args[i].numThreads = NTHREADS;
-        args[i].lambda = [](int i) {
-            // Your lambda functionality goes here
-            std::cout << "Processing element: " << i << std::endl;
-        };
-
-        pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
-    }
-
-    for (int i = 0; i < NTHREADS; i++) {
-        pthread_join(tid[i], NULL);
-    }
-
     int x = 5, y = 1;
 
     auto lambda1 = [x, &y](int) {
