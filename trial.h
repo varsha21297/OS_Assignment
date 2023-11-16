@@ -101,7 +101,7 @@ void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numT
 void parallel_for(int low1, int high1, int low2, int high2,
                   std::function<void(int, int)> &&lambda, int numThreads)
 {
-    int chunkSize1 = (high1 - low1 + 1) / numThreads;
+    int chunkSize1 = SIZE / numThreads;
     pthread_t threads[numThreads];
 
     for (int i = 0; i < numThreads; ++i)
@@ -112,13 +112,13 @@ void parallel_for(int low1, int high1, int low2, int high2,
         // Create a new std::function object for each thread
         auto threadLambda = std::function<void(int, int)>(lambda);
 
-        pthread_create(&threads[i], nullptr, &thread_func_2D,
+        pthread_create(&threads[i], NULL, &thread_func_2D,
                        new thread_args_2D{threadLow1, threadHigh1, low2, high2, std::move(threadLambda)});
     }
 
     for (int i = 0; i < numThreads; ++i)
     {
-        pthread_join(threads[i], nullptr);
+        pthread_join(threads[i], NULL);
     }
 }
 
