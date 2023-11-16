@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
   int* A = new int[size];
   int* B = new int[size];
   int* C = new int[size];
-  // initialize the vectors
+  // initialize the vectors 
   std::fill(A, A+size, 1);
   std::fill(B, B+size, 1);
   std::fill(C, C+size, 0);

@@ -3,11 +3,13 @@
 #include <functional>
 #include <stdlib.h>
 #include <cstring>
+#include <pthread.h>
 
 
 const int SIZE = 100;    // Adjust the size of your task
 void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads);
 int user_main(int argc, char **argv);
+
 typedef struct {
     int low;
     int high;
@@ -44,6 +46,7 @@ void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numT
     }
 }
 
+
 void parallel_for(int low1, int high1, int low2, int high2, std::function<void(int, int)> &&lambda, int numThreads){
     pthread_t tid[numThreads];
     thread_args args[numThreads];
@@ -52,10 +55,8 @@ void parallel_for(int low1, int high1, int low2, int high2, std::function<void(i
 
 
 
-void demonstration(std::function<void(int)> &&lambda) {
-    // You can use this function to demonstrate the lambda functionality
-
-    lambda(0);  // Pass a sample parameter to the lambda
+void demonstration(std::function<void()> &&lambda) {
+    lambda();  // Call the lambda with no arguments
 }
 
 
@@ -70,21 +71,19 @@ int main(int argc, char **argv) {
    */
   int x=5,y=1;
   // Declaring a lambda expression that accepts void type parameter
-  auto /*name*/ lambda1 = /*capture list*/[/*by value*/ x, /*by reference*/ &y](void) {
-    /* Any changes to 'x' will throw compilation error as x is captured by value */
-    y = 5;
-    std::cout<<"====== Welcome to Assignment-"<<y<<" of the CSE231(A) ======\n";
-    /* you can have any number of statements inside this lambda body */
-  };
+  auto lambda1 = [x, &y](void) {
+        y = 5;
+        std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======\n";
+    };
   // Executing the lambda function
   demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
 
   int rc = user_main(argc, argv);
  
-  auto /*name*/ lambda2 = [/*nothing captured*/]() {
-    std::cout<<"====== Hope you enjoyed CSE231(A) ======\n";
-    /* you can have any number of statements inside this lambda body */
-  };
+  auto lambda2 = []() {
+        std::cout << "====== Hope you enjoyed CSE231(A) ======\n";
+    };
+
   demonstration(lambda2);
   return rc;
 }
