@@ -71,24 +71,24 @@ int main(int argc, char **argv) {
    * in the capture list. Only local variables must be 
    * explicity captured if they are used inside lambda.
    */
-  //int x=5,y=1;
+  int x=5,y=1;
   // Declaring a lambda expression that accepts void type parameter
-  //auto /*name*/ lambda1 = /*capture list*/[/*by value*/ x, /*by reference*/ &y](void) {
+  auto /*name*/ lambda1 = /*capture list*/[/*by value*/ x, /*by reference*/ &y](void) {
     /* Any changes to 'x' will throw compilation error as x is captured by value */
-    //y = 5;
-    //std::cout<<"====== Welcome to Assignment-"<<y<<" of the CSE231(A) ======\n";
+    y = 5;
+    std::cout<<"====== Welcome to Assignment-"<<y<<" of the CSE231(A) ======\n";
     /* you can have any number of statements inside this lambda body */
-  //};
+  };
   // Executing the lambda function
-  //demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
+  demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
 
   int rc = user_main(argc, argv);
  
-  //auto /*name*/ lambda2 = [/*nothing captured*/]() {
-    //std::cout<<"====== Hope you enjoyed CSE231(A) ======\n";
+  auto /*name*/ lambda2 = [/*nothing captured*/]() {
+    std::cout<<"====== Hope you enjoyed CSE231(A) ======\n";
     /* you can have any number of statements inside this lambda body */
-  //};
-  //demonstration(lambda2);
+  };
+  demonstration(lambda2);
   return rc;
 }
 
