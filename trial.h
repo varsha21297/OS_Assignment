@@ -15,15 +15,10 @@ typedef struct {
     std::function<void(int)> lambda;
 } thread_args;
 
-void *thread_func(void *arg) {
-    thread_args *args = (thread_args *)arg;
+void demonstration(std::function<void(int)> &&lambda) {
+    // You can use this function to demonstrate the lambda functionality
 
-    // Your logic for dividing the loop range and running the lambda in parallel goes here
-    for (int i = args->low; i < args->high; ++i) {
-        args->lambda(i);
-    }
-
-    return NULL;
+    lambda(0);  // Pass a sample parameter to the lambda
 }
 
 void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads){
@@ -39,7 +34,7 @@ void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numT
             args[i].high = (i + 1) * chunk;
         }
 
-        pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
+        pthread_create(&tid[i], NULL, demonstration, (void *)&args[i]);
     }
 
     for (int i = 0; i < numThreads; i++) {
@@ -52,14 +47,6 @@ void parallel_for(int low1, int high1, int low2, int high2, std::function<void(i
     thread_args args[numThreads];
     int chunk = SIZE / numThreads;
     }
-
-
-
-void demonstration(std::function<void(int)> &&lambda) {
-    // You can use this function to demonstrate the lambda functionality
-
-    lambda(0);  // Pass a sample parameter to the lambda
-}
 
 
 int main(int argc, char **argv) {
