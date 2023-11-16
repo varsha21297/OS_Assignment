@@ -15,11 +15,7 @@ typedef struct {
     std::function<void(int)> lambda;
 } thread_args;
 
-void demonstration(std::function<void(int)> &&lambda) {
-    // You can use this function to demonstrate the lambda functionality
-
-    lambda(0);  // Pass a sample parameter to the lambda
-}
+void *thread_func(void *arg);
 
 void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads){
     pthread_t tid[numThreads];
@@ -34,7 +30,7 @@ void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numT
             args[i].high = (i + 1) * chunk;
         }
 
-        pthread_create(&tid[i], NULL, demonstration, (void *)&args[i]);
+        pthread_create(&tid[i], NULL, thread_func, (void *)&args[i]);
     }
 
     for (int i = 0; i < numThreads; i++) {
@@ -47,6 +43,14 @@ void parallel_for(int low1, int high1, int low2, int high2, std::function<void(i
     thread_args args[numThreads];
     int chunk = SIZE / numThreads;
     }
+
+
+
+void demonstration(std::function<void(int)> &&lambda) {
+    // You can use this function to demonstrate the lambda functionality
+
+    lambda(0);  // Pass a sample parameter to the lambda
+}
 
 
 int main(int argc, char **argv) {
