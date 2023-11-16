@@ -2,8 +2,10 @@
 #define SIMPLE_MULTITHREADER_H
 
 #include <iostream>
+#include <list>
 #include <functional>
-#include <pthread.h>
+#include <stdlib.h>
+#include <cstring>
 #include <chrono>
 
 const int SIZE = 100;
