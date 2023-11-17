@@ -124,39 +124,39 @@ void parallel_for(int low1, int high1, int low2, int high2,
 
 
 
-// void demonstration(std::function<void()> &&lambda) {
-//     lambda();  // Call the lambda with no arguments
-// }
+void demonstration(std::function<void()> &&lambda) {
+    lambda();  // Call the lambda with no arguments
+}
 
 
-// int main(int argc, char **argv) {
-//     /* 
-//    * Declaration of a sample C++ lambda function
-//    * that captures variable 'x' by value and 'y'
-//    * by reference. Global variables are by default
-//    * captured by reference and are not to be supplied
-//    * in the capture list. Only local variables must be 
-//    * explicity captured if they are used inside lambda.
-//    */
-//   int x=5,y=1;
-//   // Declaring a lambda expression that accepts void type parameter
-//   auto lambda1 = [x, &y](void) {
-//         y = 5;
-//         std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======\n";
-//     };
-//   // Executing the lambda function
-//   demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
+int main(int argc, char **argv) {
+    /* 
+   * Declaration of a sample C++ lambda function
+   * that captures variable 'x' by value and 'y'
+   * by reference. Global variables are by default
+   * captured by reference and are not to be supplied
+   * in the capture list. Only local variables must be 
+   * explicity captured if they are used inside lambda.
+   */
+  int x=5,y=1;
+  // Declaring a lambda expression that accepts void type parameter
+  auto lambda1 = [x, &y](void) {
+        y = 5;
+        std::cout << "====== Welcome to Assignment-" << y << " of the CSE231(A) ======\n";
+    };
+  // Executing the lambda function
+  demonstration(lambda1); // the value of x is still 5, but the value of y is now 5
 
-//   int rc = user_main(argc, argv);
+  int rc = user_main(argc, argv);
  
-//   auto lambda2 = []() {
-//         std::cout << "====== Hope you enjoyed CSE231(A) ======\n";
-//     };
+  auto lambda2 = []() {
+        std::cout << "====== Hope you enjoyed CSE231(A) ======\n";
+    };
 
-//   demonstration(lambda2);
-//   return rc;
-// }
+  demonstration(lambda2);
+  return rc;
+}
 
-// #define main user_main
+#define main user_main
 
 #endif SIMPLE_MULTITHREADER_H
