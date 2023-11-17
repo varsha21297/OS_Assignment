@@ -30,8 +30,8 @@ std::chrono::high_resolution_clock::time_point get_current_time() {
 }
 
 double calculate_time(std::chrono::high_resolution_clock::time_point start,
-                               std::chrono::high_resolution_clock::time_point end) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                       std::chrono::high_resolution_clock::time_point end) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 
 void *thread_func(void *arg) {
@@ -42,7 +42,7 @@ void *thread_func(void *arg) {
     }
 
     auto end_time = get_current_time();
-    std::cout << "Thread 1D Elapsed Time: " << calculate_time(start_time, end_time) << " ms\n"<< std::endl;
+    std::cout << "Thread 1D Elapsed Time: " << calculate_time(start_time, end_time) << " us\n"<< std::endl;
     return nullptr;
 }
 
@@ -57,7 +57,7 @@ void *thread_func_2D(void *arg) {
     }
 
     auto end_time = get_current_time();
-    std::cout << "Thread 2D Elapsed Time: " << calculate_time(start_time, end_time) << " ms\n"<< std::endl;
+    std::cout << "Thread 2D Elapsed Time: " << calculate_time(start_time, end_time) << " us\n"<< std::endl;
     return nullptr;
 }
 
