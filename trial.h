@@ -159,4 +159,4 @@ void parallel_for(int low1, int high1, int low2, int high2,
 
 // #define main user_main
 
-#endif // SIMPLE_MULTITHREADER_H
+#endif SIMPLE_MULTITHREADER_H
